@@ -263,17 +263,17 @@ class CoreUI:
             st.markdown("### About")
             st.markdown("""
             **Web Audit Tool v2.0**  
-            Ultra-optimized edition  
+            Optimized edition (linux roots)  
             
             **Features:**
             • 96.5% code reduction
-            • Web 4.0 design standards
+            • Web UX design standards
             • Maximum readability
             • Modular architecture
             
             **Active Modules:** {count}/5
             
-            **Author:** [Tu Nombre](https://github.com/tu-usuario)
+            **Author:** [Rodrigo Martel](https://github.com/netssv)
             """.format(count=sum(1 for v in st.session_state.selected_modules.values() if v)))
             
             # Footer
