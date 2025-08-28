@@ -71,12 +71,7 @@ class WebAuditApp:
             with st.spinner("Performing comprehensive audit..."):
                 CoreUI.display_loading_progress()
                 results = st.session_state.auditor.comprehensive_audit(url_input, selected_modules)
-                
-                # Extract just the results portion for better compatibility with display functions
-                if results and 'results' in results:
-                    st.session_state.audit_results = results['results']
-                else:
-                    st.session_state.audit_results = results
+                st.session_state.audit_results = results
 
 def main():
     """Main application entry point"""

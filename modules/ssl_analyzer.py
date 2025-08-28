@@ -12,21 +12,34 @@ class SSLAnalyzer:
     def analyze_ssl(self, url):
         """Comprehensive SSL/TLS analysis"""
         ssl_info = {
+            'ssl_valid': False,
             'has_ssl': False,
             'certificate_info': None,
+            'certificate_details': {},
+            'ssl_grade': None,
             'ssl_labs_grade': None,
             'protocol_version': None,
             'cipher_suite': None,
             'certificate_chain': [],
             'expiration_date': None,
             'days_until_expiry': None,
+            'expires_in_days': None,
             'issuer': None,
-            'subject': None
+            'subject': None,
+            'key_size': None,
+            'signature_algorithm': None,
+            'security_issues': [],
+            'recommendations': []
         }
         
         try:
             parsed_url = urlparse(url)
             hostname = parsed_url.netloc or parsed_url.path
+            
+            # Clean hostname (remove port if present)
+            if ':' in hostname and not hostname.startswith('['):  # Not IPv6
+                hostname = hostname.split(':')[0]
+                
             port = 443
             
             # Check if SSL is available
@@ -35,6 +48,7 @@ class SSLAnalyzer:
             with socket.create_connection((hostname, port), timeout=self.timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                     ssl_info['has_ssl'] = True
+                    ssl_info['ssl_valid'] = True  # SSL connection successful
                     cert = ssock.getpeercert()
                     ssl_info['protocol_version'] = ssock.version()
                     ssl_info['cipher_suite'] = ssock.cipher()
@@ -42,20 +56,29 @@ class SSLAnalyzer:
                     if cert:
                         ssl_info['certificate_info'] = cert
                         
+                        # Enhanced certificate details
+                        cert_details = {}
+                        
                         # Parse subject and issuer safely
                         try:
                             subject = cert.get('subject', [])
                             if subject:
-                                ssl_info['subject'] = {key: value for key, value in subject[0]}
+                                subject_dict = {key: value for key, value in subject[0]}
+                                ssl_info['subject'] = subject_dict
+                                cert_details['subject'] = subject_dict.get('commonName', 'N/A')
                         except:
                             ssl_info['subject'] = {}
+                            cert_details['subject'] = 'N/A'
                         
                         try:
                             issuer = cert.get('issuer', [])
                             if issuer:
-                                ssl_info['issuer'] = {key: value for key, value in issuer[0]}
+                                issuer_dict = {key: value for key, value in issuer[0]}
+                                ssl_info['issuer'] = issuer_dict
+                                cert_details['issuer'] = issuer_dict.get('organizationName', 'N/A')
                         except:
                             ssl_info['issuer'] = {}
+                            cert_details['issuer'] = 'N/A'
                         
                         # Parse expiration date
                         try:
@@ -63,10 +86,37 @@ class SSLAnalyzer:
                             if not_after and isinstance(not_after, str):
                                 expiry_date = datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
                                 ssl_info['expiration_date'] = expiry_date
-                                ssl_info['days_until_expiry'] = (expiry_date - datetime.now()).days
+                                days_until_expiry = (expiry_date - datetime.now()).days
+                                ssl_info['days_until_expiry'] = days_until_expiry
+                                ssl_info['expires_in_days'] = days_until_expiry
+                                cert_details['expires_in_days'] = days_until_expiry
+                                
+                                # Add expiry warnings
+                                if days_until_expiry < 7:
+                                    ssl_info['security_issues'].append("Certificate expires in less than 7 days")
+                                elif days_until_expiry < 30:
+                                    ssl_info['security_issues'].append("Certificate expires in less than 30 days")
                         except:
                             ssl_info['expiration_date'] = None
                             ssl_info['days_until_expiry'] = None
+                        
+                        # Add protocol and cipher information
+                        cert_details['protocol_version'] = ssl_info['protocol_version']
+                        if ssl_info['cipher_suite']:
+                            cipher_info = ssl_info['cipher_suite']
+                            if isinstance(cipher_info, tuple) and len(cipher_info) >= 3:
+                                cert_details['signature_algorithm'] = cipher_info[0]
+                                cert_details['key_size'] = cipher_info[2] if cipher_info[2] else 'N/A'
+                        
+                        # Security recommendations
+                        if ssl_info['protocol_version'] in ['TLSv1', 'TLSv1.1']:
+                            ssl_info['security_issues'].append("Using outdated TLS protocol")
+                            ssl_info['recommendations'].append("Upgrade to TLS 1.2 or higher")
+                        
+                        ssl_info['certificate_details'] = cert_details
+                        
+                    # Get SSL grade if certificate is valid
+                    ssl_info['ssl_grade'] = self.get_ssl_labs_grade(hostname)
                         
         except Exception as e:
             ssl_info['error'] = str(e)
@@ -74,10 +124,30 @@ class SSLAnalyzer:
         return ssl_info
         
     def get_ssl_labs_grade(self, domain):
-        """Get SSL Labs grade (simplified)"""
+        """Get SSL Labs grade (simplified assessment)"""
         try:
-            # This would normally call SSL Labs API
-            # For now, return a mock grade based on SSL availability
-            return "A"  # Placeholder
-        except:
-            return None
+            # Simple SSL assessment based on available features
+            context = ssl.create_default_context()
+            
+            with socket.create_connection((domain, 443), timeout=self.timeout) as sock:
+                with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                    # Get protocol version and cipher info
+                    protocol = ssock.version()
+                    cipher = ssock.cipher()
+                    
+                    # Basic grading logic
+                    if protocol in ['TLSv1.3']:
+                        return "A+"
+                    elif protocol in ['TLSv1.2']:
+                        # Check cipher strength
+                        if cipher and cipher[2] >= 256:
+                            return "A"
+                        else:
+                            return "B"
+                    elif protocol in ['TLSv1.1', 'TLSv1']:
+                        return "C"
+                    else:
+                        return "F"
+                        
+        except Exception:
+            return "N/A"

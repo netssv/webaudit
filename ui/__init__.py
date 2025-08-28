@@ -1,6 +1,8 @@
 """UI package initialization"""
 
 from .components import UIComponents
-from .displays import DisplayManager
+from .styling import AppStyling
+from .core_components import CoreUI
+from .ai_components import AIAnalysisComponents
 
-__all__ = ['UIComponents', 'DisplayManager']
+__all__ = ['UIComponents', 'AppStyling', 'CoreUI', 'AIAnalysisComponents']

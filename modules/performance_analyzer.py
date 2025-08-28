@@ -22,19 +22,28 @@ class PerformanceAnalyzer:
         }
         
         try:
-            # Measure response time
+            # Measure actual server response time (TTFB - Time To First Byte)
             start_time = time.time()
             response = requests.get(
                 url, 
                 timeout=self.timeout,
                 headers={'User-Agent': self.user_agent},
-                allow_redirects=True
+                allow_redirects=True,
+                stream=True  # Stream to get faster initial response
             )
-            end_time = time.time()
+            # Measure time to first byte (server response time)
+            first_byte_time = time.time()
+            ttfb = round((first_byte_time - start_time) * 1000, 2)  # ms
             
-            performance_info['response_time'] = round((end_time - start_time) * 1000, 2)  # ms
+            # Now get the full content for other metrics
+            content = response.content
+            end_time = time.time()
+            total_time = round((end_time - start_time) * 1000, 2)  # ms
+            
+            performance_info['response_time'] = ttfb  # Use TTFB as response time
+            performance_info['total_load_time'] = total_time  # Full download time
             performance_info['status_code'] = response.status_code
-            performance_info['page_size'] = len(response.content)
+            performance_info['page_size'] = len(content)
             performance_info['redirect_count'] = len(response.history)
             
             # Server information

@@ -1,307 +1,572 @@
-"""Display components for audit results"""
-import streamlit as st
-from utils.helpers import DataFormatter
+"""
+Display Components Module
+Contains all display functions for different analysis sections
+"""
 
-class DisplayManager:
-    """Manages display of audit results and components"""
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+import json
+
+
+def initialize_session_state():
+    """Initialize session state variables"""
+    if 'audit_results' not in st.session_state:
+        st.session_state.audit_results = None
+    if 'audit_in_progress' not in st.session_state:
+        st.session_state.audit_in_progress = False
+    if 'url_input' not in st.session_state:
+        st.session_state.url_input = ""
+    if 'dark_mode' not in st.session_state:
+        st.session_state.dark_mode = False
+    if 'show_raw_ai_data' not in st.session_state:
+        st.session_state.show_raw_ai_data = False
+
+
+def display_header():
+    """Display the application header"""
+    # Dark mode toggle
+    col1, col2 = st.columns([6, 1])
     
-    def __init__(self):
-        self.formatter = DataFormatter()
+    with col2:
+        if st.button("🌓", help="Toggle Dark/Light Mode"):
+            st.session_state.dark_mode = not st.session_state.dark_mode
+            st.rerun()
     
-    def display_dns_results(self, dns_data):
-        """Display DNS analysis results"""
-        if not dns_data:
-            st.warning("No DNS data available")
-            return
-        
-        st.subheader("🌐 DNS ANALYSIS")
-        
-        # DNS Records
-        if 'records' in dns_data:
-            with st.expander("DNS RECORDS", expanded=True):
-                records = dns_data['records']
-                
-                # A Records
-                if 'A' in records and records['A']:
-                    st.write("**A Records:**")
-                    for ip in records['A']:
-                        st.code(f"A    {ip}")
-                
-                # AAAA Records
-                if 'AAAA' in records and records['AAAA']:
-                    st.write("**AAAA Records:**")
-                    for ip in records['AAAA']:
-                        st.code(f"AAAA {ip}")
-                
-                # CNAME Records
-                if 'CNAME' in records and records['CNAME']:
-                    st.write("**CNAME Records:**")
-                    for cname in records['CNAME']:
-                        st.code(f"CNAME {cname}")
-                
-                # MX Records
-                if 'MX' in records and records['MX']:
-                    st.write("**MX Records:**")
-                    for mx in records['MX']:
-                        st.code(f"MX   {mx}")
-                
-                # TXT Records
-                if 'TXT' in records and records['TXT']:
-                    st.write("**TXT Records:**")
-                    for txt in records['TXT']:
-                        st.code(f"TXT  {txt}")
-        
-        # DNS Performance
-        if 'performance' in dns_data:
-            perf = dns_data['performance']
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if 'query_time' in perf:
-                    st.metric("Query Time", self.formatter.format_duration(perf['query_time']))
-            
-            with col2:
-                if 'nameservers' in perf:
-                    st.metric("Nameservers", len(perf['nameservers']))
-            
-            with col3:
-                if 'ttl' in perf:
-                    st.metric("TTL", f"{perf['ttl']}s")
+    with col1:
+        st.markdown("""
+        <div class="header-container" style="
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        ">
+            <h1 style="
+                color: #ffffff !important;
+                margin: 0;
+                font-size: 36px;
+                font-weight: 700;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            ">🕸️ Web Audit Tool</h1>
+            <p style="
+                color: #ffffff !important;
+                margin: 10px 0 0 0;
+                font-size: 18px;
+                opacity: 0.9;
+            ">Comprehensive website analysis and optimization insights</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+def display_search_interface():
+    """Display the search interface and controls"""
+    st.markdown("### 🔍 Website Analysis")
     
-    def display_ssl_results(self, ssl_data):
-        """Display SSL analysis results"""
-        if not ssl_data:
-            st.warning("No SSL data available")
-            return
-        
-        st.subheader("🔒 SSL/TLS ANALYSIS")
-        
-        # Certificate Info
-        if 'certificate' in ssl_data:
-            cert = ssl_data['certificate']
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if 'subject' in cert:
-                    st.metric("Subject", cert['subject'])
-                if 'issuer' in cert:
-                    st.metric("Issuer", cert['issuer'])
-            
-            with col2:
-                if 'valid_from' in cert:
-                    st.metric("Valid From", cert['valid_from'])
-                if 'valid_to' in cert:
-                    st.metric("Valid To", cert['valid_to'])
-        
-        # Security Assessment
-        if 'security' in ssl_data:
-            security = ssl_data['security']
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if 'grade' in security:
-                    st.metric("SSL Grade", security['grade'])
-            
-            with col2:
-                if 'protocol_version' in security:
-                    st.metric("Protocol", security['protocol_version'])
-            
-            with col3:
-                if 'cipher_suite' in security:
-                    st.metric("Cipher Suite", security['cipher_suite'])
+    # URL input
+    url = st.text_input(
+        "Enter website URL:",
+        value=st.session_state.url_input,
+        placeholder="https://example.com",
+        help="Enter the full URL including https://",
+        key="url_input_field"
+    )
     
-    def display_seo_results(self, seo_data):
-        """Display SEO analysis results"""
-        if not seo_data:
-            st.warning("No SEO data available")
-            return
-        
-        st.subheader("📈 SEO & MARKETING ANALYSIS")
-        
-        # Meta Tags
-        if 'meta_tags' in seo_data:
-            meta = seo_data['meta_tags']
-            
-            with st.expander("META TAGS", expanded=True):
-                if 'title' in meta:
-                    st.write(f"**Title:** {meta['title']}")
-                    st.write(f"**Title Length:** {len(meta['title'])} chars")
-                
-                if 'description' in meta:
-                    st.write(f"**Description:** {meta['description']}")
-                    st.write(f"**Description Length:** {len(meta['description'])} chars")
-                
-                if 'keywords' in meta:
-                    st.write(f"**Keywords:** {meta['keywords']}")
-        
-        # Social Media
-        if 'social_media' in seo_data:
-            social = seo_data['social_media']
-            
-            with st.expander("SOCIAL MEDIA TAGS"):
-                if 'og_title' in social:
-                    st.write(f"**OG Title:** {social['og_title']}")
-                if 'og_description' in social:
-                    st.write(f"**OG Description:** {social['og_description']}")
-                if 'twitter_card' in social:
-                    st.write(f"**Twitter Card:** {social['twitter_card']}")
-        
-        # Performance Metrics
-        if 'performance' in seo_data:
-            perf = seo_data['performance']
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                if 'load_time' in perf:
-                    st.metric("Load Time", self.formatter.format_duration(perf['load_time']))
-            
-            with col2:
-                if 'page_size' in perf:
-                    st.metric("Page Size", self.formatter.format_bytes(perf['page_size']))
-            
-            with col3:
-                if 'images_count' in perf:
-                    st.metric("Images", perf['images_count'])
-            
-            with col4:
-                if 'links_count' in perf:
-                    st.metric("Links", perf['links_count'])
+    # Update session state
+    if url != st.session_state.url_input:
+        st.session_state.url_input = url
     
-    def display_performance_results(self, perf_data):
-        """Display performance analysis results"""
-        if not perf_data:
-            st.warning("No performance data available")
-            return
+    def handle_example_domain(example_url):
+        """Handle example domain button clicks"""
+        st.session_state.url_input = example_url
+        st.rerun()
+    
+    # Example domains
+    st.markdown("**Quick examples:**")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("📰 BBC", help="Analyze BBC website"):
+            handle_example_domain("https://www.bbc.com")
+    with col2:
+        if st.button("🛒 Amazon", help="Analyze Amazon website"):
+            handle_example_domain("https://www.amazon.com")
+    with col3:
+        if st.button("🐦 Twitter", help="Analyze Twitter website"):
+            handle_example_domain("https://twitter.com")
+    with col4:
+        if st.button("📚 Wikipedia", help="Analyze Wikipedia website"):
+            handle_example_domain("https://www.wikipedia.org")
+
+
+def display_loading_progress():
+    """Display loading progress for audit"""
+    st.markdown("### ⏳ Analysis in Progress")
+    
+    # Progress bar
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    # Simulate progress steps
+    steps = [
+        "Initializing analysis...",
+        "Checking SSL certificate...",
+        "Analyzing DNS configuration...",
+        "Testing performance metrics...",
+        "Scanning SEO elements...",
+        "Evaluating ranking factors...",
+        "Generating comprehensive report..."
+    ]
+    
+    for i, step in enumerate(steps):
+        status_text.text(step)
+        progress_bar.progress((i + 1) / len(steps))
         
-        st.subheader("⚡ PERFORMANCE ANALYSIS")
+    status_text.text("✅ Analysis complete!")
+    return progress_bar, status_text
+
+
+def display_audit_results(results):
+    """Display main audit results with tabs"""
+    if not results:
+        st.warning("⚠️ No audit results to display")
+        return
+    
+    st.markdown("### 📊 Analysis Results")
+    
+    # Create tabs based on available data
+    available_tabs = []
+    tab_data = {}
+    
+    if "performance" in results and results["performance"]:
+        available_tabs.append("⚡ Performance")
+        tab_data["⚡ Performance"] = results["performance"]
+    
+    if "seo_marketing" in results and results["seo_marketing"]:
+        available_tabs.append("🔍 SEO Analysis")
+        tab_data["🔍 SEO Analysis"] = results["seo_marketing"]
+    
+    if "ssl" in results and results["ssl"]:
+        available_tabs.append("🔒 Security")
+        tab_data["🔒 Security"] = results["ssl"]
+    
+    if "dns" in results and results["dns"]:
+        available_tabs.append("🌐 DNS")
+        tab_data["🌐 DNS"] = results["dns"]
+    
+    if "ranking" in results and results["ranking"]:
+        available_tabs.append("📈 Ranking")
+        tab_data["📈 Ranking"] = results["ranking"]
+    
+    # Add general tabs
+    available_tabs.extend(["📋 Technical", "📊 Dashboard", "🤖 AI Analysis", "📄 Raw Data"])
+    
+    if not available_tabs:
+        st.error("❌ No valid data found in audit results")
+        return
+    
+    # Create and display tabs
+    tabs = st.tabs(available_tabs)
+    
+    for i, tab_name in enumerate(available_tabs):
+        with tabs[i]:
+            if tab_name == "⚡ Performance" and "⚡ Performance" in tab_data:
+                display_performance_analysis(tab_data["⚡ Performance"])
+            elif tab_name == "🔍 SEO Analysis" and "🔍 SEO Analysis" in tab_data:
+                display_seo_marketing_analysis(tab_data["🔍 SEO Analysis"])
+            elif tab_name == "🔒 Security" and "🔒 Security" in tab_data:
+                display_security_analysis(tab_data["🔒 Security"])
+            elif tab_name == "🌐 DNS" and "🌐 DNS" in tab_data:
+                display_dns_analysis(tab_data["🌐 DNS"])
+            elif tab_name == "📈 Ranking" and "📈 Ranking" in tab_data:
+                display_ranking_analysis(tab_data["📈 Ranking"])
+            elif tab_name == "📋 Technical":
+                display_technical_analysis(results)
+            elif tab_name == "📊 Dashboard":
+                display_metrics_dashboard(results)
+            elif tab_name == "🤖 AI Analysis":
+                from .ai_components import AIAnalysisComponents
+                AIAnalysisComponents.display_ai_analysis(results)
+            elif tab_name == "📄 Raw Data":
+                from .ai_components import AIAnalysisComponents
+                AIAnalysisComponents.display_raw_data_only(results)
+
+
+def display_performance_analysis(performance_data):
+    """Display performance analysis with charts and metrics"""
+    if not performance_data:
+        st.warning("⚠️ No performance data available")
+        return
+    
+    st.markdown("### ⚡ Performance Analysis")
+    
+    # Performance metrics
+    if "metrics" in performance_data:
+        metrics = performance_data["metrics"]
         
         # Core Web Vitals
-        if 'core_web_vitals' in perf_data:
-            vitals = perf_data['core_web_vitals']
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if 'lcp' in vitals:
-                    st.metric("LCP", self.formatter.format_duration(vitals['lcp']), 
-                             help="Largest Contentful Paint")
-            
-            with col2:
-                if 'fid' in vitals:
-                    st.metric("FID", self.formatter.format_duration(vitals['fid']),
-                             help="First Input Delay")
-            
-            with col3:
-                if 'cls' in vitals:
-                    st.metric("CLS", f"{vitals['cls']:.3f}",
-                             help="Cumulative Layout Shift")
+        st.markdown("#### 📊 Core Web Vitals")
+        col1, col2, col3 = st.columns(3)
         
-        # Resource Analysis
-        if 'resources' in perf_data:
-            resources = perf_data['resources']
-            
-            with st.expander("RESOURCE ANALYSIS"):
-                if 'total_requests' in resources:
-                    st.metric("Total Requests", resources['total_requests'])
-                
-                if 'total_size' in resources:
-                    st.metric("Total Size", self.formatter.format_bytes(resources['total_size']))
-                
-                if 'compression_ratio' in resources:
-                    st.metric("Compression Ratio", f"{resources['compression_ratio']:.1%}")
+        with col1:
+            lcp = metrics.get("largest_contentful_paint", "N/A")
+            st.metric("LCP (Largest Contentful Paint)", f"{lcp}s" if lcp != "N/A" else "N/A")
+        
+        with col2:
+            fid = metrics.get("first_input_delay", "N/A")
+            st.metric("FID (First Input Delay)", f"{fid}ms" if fid != "N/A" else "N/A")
+        
+        with col3:
+            cls = metrics.get("cumulative_layout_shift", "N/A")
+            st.metric("CLS (Cumulative Layout Shift)", str(cls) if cls != "N/A" else "N/A")
+        
+        # Additional metrics
+        st.markdown("#### 🚀 Additional Metrics")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            load_time = metrics.get("page_load_time", "N/A")
+            st.metric("Page Load Time", f"{load_time}s" if load_time != "N/A" else "N/A")
+        
+        with col2:
+            ttfb = metrics.get("time_to_first_byte", "N/A")
+            st.metric("TTFB", f"{ttfb}ms" if ttfb != "N/A" else "N/A")
+        
+        with col3:
+            dom_content = metrics.get("dom_content_loaded", "N/A")
+            st.metric("DOM Content Loaded", f"{dom_content}s" if dom_content != "N/A" else "N/A")
+        
+        with col4:
+            page_size = metrics.get("page_size", "N/A")
+            if page_size != "N/A":
+                try:
+                    size_mb = float(page_size) / (1024 * 1024)
+                    st.metric("Page Size", f"{size_mb:.2f} MB")
+                except:
+                    st.metric("Page Size", str(page_size))
+            else:
+                st.metric("Page Size", "N/A")
     
-    def display_ranking_results(self, ranking_data):
-        """Display ranking analysis results"""
-        if not ranking_data:
-            st.warning("No ranking data available")
-            return
+    # Performance score
+    if "lighthouse_score" in performance_data:
+        score = performance_data["lighthouse_score"]
+        st.markdown("#### 📈 Performance Score")
         
-        st.subheader("🏆 RANKING ANALYSIS")
-        
-        # SEO Scores
-        if 'seo_score' in ranking_data:
-            score = ranking_data['seo_score']
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if 'overall' in score:
-                    st.metric("Overall Score", f"{score['overall']}/100")
-            
-            with col2:
-                if 'content' in score:
-                    st.metric("Content Score", f"{score['content']}/100")
-            
-            with col3:
-                if 'technical' in score:
-                    st.metric("Technical Score", f"{score['technical']}/100")
-        
-        # Recommendations
-        if 'recommendations' in ranking_data:
-            recommendations = ranking_data['recommendations']
-            
-            with st.expander("RECOMMENDATIONS", expanded=True):
-                for i, rec in enumerate(recommendations, 1):
-                    st.write(f"**{i}.** {rec}")
+        # Create gauge chart for score
+        if isinstance(score, (int, float)):
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=score,
+                title={'text': "Lighthouse Performance Score"},
+                domain={'x': [0, 1], 'y': [0, 1]},
+                gauge={
+                    'axis': {'range': [None, 100]},
+                    'bar': {'color': "darkgreen" if score >= 80 else "orange" if score >= 50 else "red"},
+                    'steps': [
+                        {'range': [0, 50], 'color': "lightgray"},
+                        {'range': [50, 80], 'color': "gray"},
+                        {'range': [80, 100], 'color': "lightgreen"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 4},
+                        'thickness': 0.75,
+                        'value': 90
+                    }
+                }
+            ))
+            fig.update_layout(height=300)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.metric("Performance Score", str(score))
     
-    def display_audit_summary(self, audit_result):
-        """Display complete audit summary"""
-        if not audit_result:
-            st.error("No audit results available")
-            return
-        
-        # Handle error case
-        if 'error' in audit_result:
-            st.error(f"❌ **Analysis Failed:** {audit_result['error']}")
-            return
-        
-        st.header("📊 AUDIT SUMMARY")
-        
-        # URL Info
-        if 'url' in audit_result:
-            st.info(f"**Analyzed URL:** {audit_result['url']}")
-        
-        if 'timestamp' in audit_result:
-            st.info(f"**Analysis Date:** {audit_result['timestamp']}")
-        
-        if 'audit_mode' in audit_result:
-            st.info(f"**Audit Mode:** {audit_result['audit_mode'].title()}")
-        
-        # Get results from nested structure
-        results = audit_result.get('results', {})
-        
-        # Display each module's results
-        if 'dns' in results:
-            self.display_dns_results(results['dns'])
-            st.divider()
-        
-        if 'ssl' in results:
-            self.display_ssl_results(results['ssl'])
-            st.divider()
-        
-        if 'seo_marketing' in results:
-            self.display_seo_results(results['seo_marketing'])
-            st.divider()
-        
-        if 'performance' in results:
-            self.display_performance_results(results['performance'])
-            st.divider()
-        
-        if 'ranking' in results:
-            self.display_ranking_results(results['ranking'])
+    # Performance issues
+    if "issues" in performance_data and performance_data["issues"]:
+        st.markdown("#### ⚠️ Performance Issues")
+        for i, issue in enumerate(performance_data["issues"], 1):
+            if isinstance(issue, dict):
+                st.error(f"{i}. {issue.get('description', str(issue))}")
+            else:
+                st.error(f"{i}. {str(issue)}")
+
+
+def display_seo_marketing_analysis(seo_data):
+    """Display SEO analysis with comprehensive or basic view"""
+    if not seo_data:
+        st.warning("⚠️ No SEO data available")
+        return
     
-    def display_error_message(self, error_msg):
-        """Display error message with styling"""
-        st.error(f"❌ **Analysis Failed**\n\n{error_msg}")
+    # Check if this is comprehensive SEO data
+    if any(key in seo_data for key in ['meta_tags', 'headings', 'images', 'internal_links', 'external_links']):
+        display_comprehensive_seo_analysis(seo_data)
+    else:
+        display_basic_seo_analysis(seo_data)
+
+
+def display_comprehensive_seo_analysis(seo_data):
+    """Display comprehensive SEO analysis with detailed breakdown"""
+    st.markdown("### 🔍 Comprehensive SEO Analysis")
     
-    def display_loading_message(self, message="Analyzing website..."):
-        """Display loading message with progress"""
-        with st.spinner(message):
-            st.info("🔍 This may take a few moments depending on the website size and complexity.")
+    # Meta Information
+    st.markdown("#### 📝 Meta Information")
+    col1, col2 = st.columns(2)
     
-    def display_success_message(self, message="Analysis completed successfully!"):
-        """Display success message"""
-        st.success(f"✅ {message}")
+    with col1:
+        # Title analysis
+        title = seo_data.get("title", "Not found")
+        title_length = len(title) if title != "Not found" else 0
+        
+        st.markdown("**Page Title:**")
+        if title != "Not found":
+            title_status = "✅" if 30 <= title_length <= 60 else "⚠️"
+            st.write(f"{title_status} {title}")
+            st.caption(f"Length: {title_length} characters {'(Good)' if 30 <= title_length <= 60 else '(Too short)' if title_length < 30 else '(Too long)'}")
+        else:
+            st.error("❌ No title tag found")
+    
+    with col2:
+        # Meta description analysis
+        meta_desc = seo_data.get("meta_description", "Not found")
+        desc_length = len(meta_desc) if meta_desc != "Not found" else 0
+        
+        st.markdown("**Meta Description:**")
+        if meta_desc != "Not found":
+            desc_status = "✅" if 120 <= desc_length <= 160 else "⚠️"
+            st.write(f"{desc_status} {meta_desc}")
+            st.caption(f"Length: {desc_length} characters {'(Good)' if 120 <= desc_length <= 160 else '(Too short)' if desc_length < 120 else '(Too long)'}")
+        else:
+            st.error("❌ No meta description found")
+
+
+def display_basic_seo_analysis(seo_data):
+    """Display basic SEO analysis for simple data structure"""
+    st.markdown("### 🔍 SEO Analysis")
+    
+    # Basic SEO elements
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 📝 Basic Elements")
+        
+        title = seo_data.get("title", "Not found")
+        if title != "Not found":
+            st.success(f"**Title:** {title}")
+            st.caption(f"Length: {len(title)} characters")
+        else:
+            st.error("❌ Title tag missing")
+        
+        meta_desc = seo_data.get("meta_description", "Not found")
+        if meta_desc != "Not found":
+            st.success(f"**Meta Description:** {meta_desc}")
+            st.caption(f"Length: {len(meta_desc)} characters")
+        else:
+            st.error("❌ Meta description missing")
+    
+    with col2:
+        st.markdown("#### 📊 Quick Stats")
+        
+        # Keywords
+        keywords = seo_data.get("keywords", [])
+        if keywords:
+            st.metric("Keywords Found", len(keywords))
+            if len(keywords) > 0:
+                top_keywords = keywords[:5] if isinstance(keywords, list) else [str(keywords)]
+                st.write("**Top Keywords:**")
+                for keyword in top_keywords:
+                    st.write(f"• {keyword}")
+        
+        # H1 tags
+        h1_tags = seo_data.get("h1_tags", 0)
+        st.metric("H1 Tags", h1_tags)
+        
+        if h1_tags == 0:
+            st.warning("⚠️ No H1 tags found")
+        elif h1_tags > 1:
+            st.warning("⚠️ Multiple H1 tags found")
+        else:
+            st.success("✅ Single H1 tag found")
+
+
+def display_security_analysis(ssl_data):
+    """Display SSL/Security analysis"""
+    if not ssl_data:
+        st.warning("⚠️ No security data available")
+        return
+    
+    st.markdown("### 🔒 Security Analysis")
+    
+    # SSL Status
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        ssl_valid = ssl_data.get("ssl_valid", False)
+        if ssl_valid:
+            st.success("✅ SSL Certificate Valid")
+        else:
+            st.error("❌ SSL Certificate Invalid")
+    
+    with col2:
+        ssl_grade = ssl_data.get("ssl_grade", "N/A")
+        if ssl_grade != "N/A":
+            grade_color = "🟢" if ssl_grade in ["A+", "A"] else "🟡" if ssl_grade == "B" else "🔴"
+            st.metric("SSL Grade", f"{grade_color} {ssl_grade}")
+        else:
+            st.metric("SSL Grade", "Not Available")
+    
+    with col3:
+        cert_expiry = ssl_data.get("certificate_expiry", "N/A")
+        if cert_expiry != "N/A":
+            st.metric("Certificate Expires", cert_expiry)
+        else:
+            st.metric("Certificate Expires", "Unknown")
+
+
+def display_dns_analysis(dns_data):
+    """Display DNS analysis"""
+    if not dns_data:
+        st.warning("⚠️ No DNS data available")
+        return
+    
+    st.markdown("### 🌐 DNS Analysis")
+    
+    # DNS Records Overview
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        a_records = dns_data.get("a_records", [])
+        st.metric("A Records", len(a_records) if isinstance(a_records, list) else a_records)
+    
+    with col2:
+        mx_records = dns_data.get("mx_records", [])
+        st.metric("MX Records", len(mx_records) if isinstance(mx_records, list) else mx_records)
+    
+    with col3:
+        ns_records = dns_data.get("ns_records", [])
+        st.metric("NS Records", len(ns_records) if isinstance(ns_records, list) else ns_records)
+    
+    with col4:
+        cname_records = dns_data.get("cname_records", [])
+        st.metric("CNAME Records", len(cname_records) if isinstance(cname_records, list) else cname_records)
+
+
+def display_ranking_analysis(ranking_data):
+    """Display ranking analysis"""
+    if not ranking_data:
+        st.warning("⚠️ No ranking data available")
+        return
+    
+    st.markdown("### 📈 Ranking Analysis")
+    
+    # Authority Metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        domain_authority = ranking_data.get("domain_authority", "N/A")
+        if domain_authority != "N/A":
+            da_color = "🟢" if domain_authority >= 50 else "🟡" if domain_authority >= 30 else "🔴"
+            st.metric("Domain Authority", f"{da_color} {domain_authority}")
+        else:
+            st.metric("Domain Authority", "N/A")
+    
+    with col2:
+        page_authority = ranking_data.get("page_authority", "N/A")
+        if page_authority != "N/A":
+            pa_color = "🟢" if page_authority >= 40 else "🟡" if page_authority >= 20 else "🔴"
+            st.metric("Page Authority", f"{pa_color} {page_authority}")
+        else:
+            st.metric("Page Authority", "N/A")
+    
+    with col3:
+        backlinks = ranking_data.get("backlinks", "N/A")
+        st.metric("Backlinks", backlinks)
+    
+    with col4:
+        referring_domains = ranking_data.get("referring_domains", "N/A")
+        st.metric("Referring Domains", referring_domains)
+
+
+def display_technical_analysis(audit_data):
+    """Display technical analysis summary"""
+    st.markdown("### 📋 Technical Analysis")
+    
+    if not audit_data:
+        st.warning("⚠️ No technical data available")
+        return
+    
+    # Summary of all available data
+    st.markdown("#### 📊 Available Analysis Modules")
+    
+    modules = {
+        "Performance": "performance" in audit_data and audit_data["performance"],
+        "SEO": "seo_marketing" in audit_data and audit_data["seo_marketing"],
+        "Security": "ssl" in audit_data and audit_data["ssl"],
+        "DNS": "dns" in audit_data and audit_data["dns"],
+        "Ranking": "ranking" in audit_data and audit_data["ranking"]
+    }
+    
+    for module, available in modules.items():
+        if available:
+            st.success(f"✅ {module} Analysis - Data Available")
+        else:
+            st.error(f"❌ {module} Analysis - No Data")
+
+
+def display_metrics_dashboard(audit_data):
+    """Display comprehensive metrics dashboard"""
+    st.markdown("### 📊 Metrics Dashboard")
+    
+    if not audit_data:
+        st.warning("⚠️ No data available for dashboard")
+        return
+    
+    # Collect all metrics
+    metrics = {}
+    
+    # Performance metrics
+    if "performance" in audit_data and audit_data["performance"]:
+        perf = audit_data["performance"]
+        if "metrics" in perf:
+            perf_metrics = perf["metrics"]
+            metrics.update({
+                "Page Load Time": f"{perf_metrics.get('page_load_time', 'N/A')}s",
+                "TTFB": f"{perf_metrics.get('time_to_first_byte', 'N/A')}ms",
+                "LCP": f"{perf_metrics.get('largest_contentful_paint', 'N/A')}s",
+                "Performance Score": perf.get("lighthouse_score", "N/A")
+            })
+    
+    # SEO metrics
+    if "seo_marketing" in audit_data and audit_data["seo_marketing"]:
+        seo = audit_data["seo_marketing"]
+        title_length = len(seo.get("title", "")) if seo.get("title") else 0
+        desc_length = len(seo.get("meta_description", "")) if seo.get("meta_description") else 0
+        
+        metrics.update({
+            "Title Length": f"{title_length} chars",
+            "Meta Desc Length": f"{desc_length} chars",
+            "H1 Tags": seo.get("h1_tags", 0),
+            "Keywords": len(seo.get("keywords", [])) if isinstance(seo.get("keywords"), list) else seo.get("keywords", "N/A")
+        })
+    
+    # Security metrics
+    if "ssl" in audit_data and audit_data["ssl"]:
+        ssl = audit_data["ssl"]
+        metrics.update({
+            "SSL Valid": "✅" if ssl.get("ssl_valid") else "❌",
+            "SSL Grade": ssl.get("ssl_grade", "N/A")
+        })
+    
+    # DNS metrics
+    if "dns" in audit_data and audit_data["dns"]:
+        dns = audit_data["dns"]
+        metrics.update({
+            "A Records": len(dns.get("a_records", [])) if isinstance(dns.get("a_records"), list) else dns.get("a_records", "N/A"),
+            "MX Records": len(dns.get("mx_records", [])) if isinstance(dns.get("mx_records"), list) else dns.get("mx_records", "N/A")
+        })
+    
+    # Display metrics in a grid
+    cols = st.columns(4)
+    for i, (key, value) in enumerate(metrics.items()):
+        with cols[i % 4]:
+            st.metric(key, value)
