@@ -116,7 +116,7 @@ def main():
         # Audit button
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("🚀 Start Audit", type="primary", disabled=not st.session_state.url_input):
+            if st.button("Start Audit", type="primary", disabled=not st.session_state.url_input):
                 # Validate URL
                 is_valid, error_msg = validate_url(st.session_state.url_input)
                 

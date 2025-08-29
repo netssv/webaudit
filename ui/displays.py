@@ -19,36 +19,25 @@ def initialize_session_state():
         st.session_state.audit_in_progress = False
     if 'url_input' not in st.session_state:
         st.session_state.url_input = ""
-    if 'dark_mode' not in st.session_state:
-        st.session_state.dark_mode = False
     if 'show_raw_ai_data' not in st.session_state:
         st.session_state.show_raw_ai_data = False
 
 
 def display_header():
     """Display the application header"""
-    # Dark mode toggle
-    col1, col2 = st.columns([6, 1])
-    
-    with col2:
-        if st.button("🌓", help="Toggle Dark/Light Mode"):
-            st.session_state.dark_mode = not st.session_state.dark_mode
-            st.rerun()
-    
-    with col1:
-        st.markdown("""
-        <div class="header-container" style="
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        ">
-            <h1 style="
-                color: #ffffff !important;
-                margin: 0;
-                font-size: 36px;
+    st.markdown("""
+    <div class="header-container" style="
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    ">
+        <h1 style="
+            color: #ffffff !important;
+            margin: 0;
+                font-size: 48px;
                 font-weight: 700;
                 text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             ">🕸️ Web Audit Tool</h1>
@@ -317,6 +306,16 @@ def display_comprehensive_seo_analysis(seo_data):
         else:
             st.error("❌ No meta description found")
 
+    # Marketing tools (if any)
+    marketing = seo_data.get("marketing_tools", [])
+    if marketing:
+        st.markdown("#### 📣 Marketing & Tracking Tools Detected")
+        for tool in marketing:
+            name = tool.get("name", "Unknown")
+            evidence = tool.get("evidence", "No evidence")
+            confidence = tool.get("confidence", "unknown")
+            st.markdown(f"- **{name}** — _{evidence}_ — Confidence: **{confidence}**")
+
 
 def display_basic_seo_analysis(seo_data):
     """Display basic SEO analysis for simple data structure"""
@@ -365,6 +364,37 @@ def display_basic_seo_analysis(seo_data):
             st.warning("⚠️ Multiple H1 tags found")
         else:
             st.success("✅ Single H1 tag found")
+
+    # Basic marketing tools display (if present)
+    marketing = seo_data.get("marketing_tools", [])
+    if marketing:
+        render_marketing_tools(marketing)
+
+
+def render_marketing_tools(marketing):
+    """Render marketing/tracking tools with UX-focused badges and evidence."""
+    if not marketing:
+        return
+
+    st.markdown("#### 📣 Marketing & Tracking Tools Detected")
+    for tool in marketing:
+        name = tool.get("name", "Unknown")
+        evidence = tool.get("evidence", "No evidence")
+        confidence = (tool.get("confidence") or "unknown").lower()
+
+        # Visual treatment by confidence
+        if confidence == "high":
+            st.success(f"✅ {name} — {confidence.upper()}")
+            st.caption(evidence)
+        elif confidence == "medium":
+            st.info(f"⚠️ {name} — {confidence}")
+            st.caption(evidence)
+        else:
+            st.warning(f"❕ {name} — {confidence}")
+            st.caption(evidence)
+
+        # Small separator for readability
+        st.write("---")
 
 
 def display_security_analysis(ssl_data):

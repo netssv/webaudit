@@ -120,19 +120,19 @@ class AIAnalysisComponents:
         summary = AIAnalysisComponents.generate_summary_for_chatgpt(audit_data)
         
         # Display summary section
-        st.markdown("#### 📋 Analysis Summary")
+        st.markdown("#### Analysis Summary")
         
         # Show summary in an expandable section
         with st.expander("View Generated Summary", expanded=False):
             st.write(summary)
             
             # Copy to clipboard functionality
-            if st.button("📋 Copy Summary", help="Copy summary to clipboard", key="copy_ai_summary"):
+            if st.button("Copy Summary", help="Copy summary to clipboard", key="copy_ai_summary"):
                 # Note: This creates a text area that users can manually copy from
                 st.text_area("Copy this text:", value=summary, height=100, key="copy_summary")
         
         # ChatGPT Integration Section
-        st.markdown("#### 🧠 Get AI Insights")
+        st.markdown("#### Get AI Insights")
         
         col1, col2 = st.columns([3, 1])
         
@@ -187,22 +187,22 @@ class AIAnalysisComponents:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("📊 Performance Focus", help="Analyze performance metrics in detail", key="ai_performance_focus"):
+            if st.button("Performance Focus", help="Analyze performance metrics in detail", key="ai_performance_focus"):
                 perf_summary = AIAnalysisComponents._generate_performance_focused_summary(audit_data)
                 st.text_area("Performance Analysis Summary:", value=perf_summary, height=150, key="perf_analysis_summary")
         
         with col2:
-            if st.button("🔍 SEO Focus", help="Analyze SEO and marketing aspects", key="ai_seo_focus"):
+            if st.button("SEO Focus", help="Analyze SEO and marketing aspects", key="ai_seo_focus"):
                 seo_summary = AIAnalysisComponents._generate_seo_focused_summary(audit_data)
                 st.text_area("SEO Analysis Summary:", value=seo_summary, height=150, key="seo_analysis_summary")
         
         with col3:
-            if st.button("🔒 Security Focus", help="Analyze security and technical aspects", key="ai_security_focus"):
+            if st.button("Security Focus", help="Analyze security and technical aspects", key="ai_security_focus"):
                 security_summary = AIAnalysisComponents._generate_security_focused_summary(audit_data)
                 st.text_area("Security Analysis Summary:", value=security_summary, height=150, key="security_analysis_summary")
         
         # Raw data toggle
-        st.markdown("#### 🗂️ Raw Data")
+        st.markdown("#### Raw Data")
         
         show_raw = st.checkbox("Show raw audit data", value=False, key="show_raw_data_ai")
         
@@ -229,7 +229,7 @@ class AIAnalysisComponents:
         
         # Download raw data option with improved UI
         st.markdown("---")
-        st.markdown("#### 📥 Export Options")
+        st.markdown("#### Export Options")
         
         col1, col2 = st.columns([1, 1])
         
@@ -240,11 +240,11 @@ class AIAnalysisComponents:
             unique_suffix = f"{session_id}_{int(time.time() * 1000000) % 1000000}"
             download_key = f"download_raw_data_json_{hash(str(audit_data))}_{unique_suffix}"
             
-            if st.button("💾 Download as JSON", key=download_key, type="primary", use_container_width=True):
+            if st.button("Download as JSON", key=download_key, type="primary", use_container_width=True):
                 json_data = json.dumps(audit_data, indent=2, default=str)
                 download_file_key = f"download_json_file_{hash(str(audit_data))}_{unique_suffix}"
                 st.download_button(
-                    label="📥 Download JSON File",
+                    label="Download JSON File",
                     data=json_data,
                     file_name=f"audit_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
                     mime="application/json",
@@ -255,7 +255,7 @@ class AIAnalysisComponents:
         with col2:
             # Copy to clipboard functionality
             copy_key = f"copy_raw_data_{hash(str(audit_data))}_{unique_suffix}"
-            if st.button("📋 Copy to Clipboard", key=copy_key, use_container_width=True):
+            if st.button("Copy to Clipboard", key=copy_key, use_container_width=True):
                 json_data = json.dumps(audit_data, indent=2, default=str)
                 st.code(json_data[:500] + "..." if len(json_data) > 500 else json_data, language="json")
                 st.success("✅ Data preview shown above. Use browser copy function to copy the JSON data.")
@@ -324,7 +324,14 @@ class AIAnalysisComponents:
         # Add marketing tools
         marketing_tools = seo.get('marketing_tools', [])
         if marketing_tools:
-            summary_parts.append(f"Marketing Tools: {', '.join(marketing_tools)}")
+            # Normalize to names only to avoid printing raw dicts
+            names = []
+            for t in marketing_tools:
+                if isinstance(t, dict):
+                    names.append(t.get('name', str(t)))
+                else:
+                    names.append(str(t))
+            summary_parts.append(f"Marketing Tools: {', '.join(names)}")
         
         return " | ".join(summary_parts)
     

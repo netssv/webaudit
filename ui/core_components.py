@@ -36,7 +36,7 @@ class CoreUI:
             .main-title {
                 color: #1a1a1a;
                 margin: 0;
-                font-size: 2.2rem;
+                font-size: 3.2rem;
                 font-weight: 400;
                 background: none !important;
                 background-color: transparent !important;
@@ -89,9 +89,6 @@ class CoreUI:
                 use_container_width=True,
                 help="Start website analysis"
             )
-        
-        # Example domains for quick testing
-        st.markdown('<div style="text-align: center; margin: 0.5rem 0; padding: 0;"><p style="margin: 0; padding: 0; color: #666; font-size: 0.85rem;">Quick examples: <span style="color: #1976d2; text-decoration: underline; margin: 0 8px;">google.com</span> | <span style="color: #1976d2; text-decoration: underline; margin: 0 8px;">github.com</span> | <span style="color: #1976d2; text-decoration: underline; margin: 0 8px;">stackoverflow.com</span></p></div>', unsafe_allow_html=True)
         
         # Google-style input override - clean and simple
         st.markdown("""
@@ -172,22 +169,8 @@ class CoreUI:
             # Main Sidebar Title
             st.markdown("## Settings")
             
-            # Theme Settings - Using radio buttons instead of buttons
-            st.markdown("### Appearance")
-            
-            # Theme selection with radio buttons (cleaner than buttons)
-            current_theme = "Dark" if st.session_state.get('dark_mode', False) else "Light"
-            theme_choice = st.radio(
-                "Theme",
-                options=["Light", "Dark"],
-                index=0 if current_theme == "Light" else 1,
-                horizontal=True,
-                label_visibility="collapsed"
-            )
-            
-            if theme_choice != current_theme:
-                st.session_state.dark_mode = (theme_choice == "Dark")
-                st.rerun()
+            # Note: Theme switching disabled due to Streamlit limitations
+            # The app uses a clean, modern light theme optimized for readability
             
             st.divider()
             
@@ -263,7 +246,7 @@ class CoreUI:
             st.markdown("### About")
             st.markdown("""
             **Web Audit Tool v2.0**  
-            Optimized edition (linux roots)  
+            Streamlined Performance with Linux Roots            
             
             **Features:**
             • 96.5% code reduction
@@ -289,8 +272,6 @@ class CoreUI:
             st.session_state.audit_in_progress = False
         if 'url_input' not in st.session_state:
             st.session_state.url_input = ""
-        if 'dark_mode' not in st.session_state:
-            st.session_state.dark_mode = False
         if 'show_raw_ai_data' not in st.session_state:
             st.session_state.show_raw_ai_data = False
         if 'selected_modules' not in st.session_state:

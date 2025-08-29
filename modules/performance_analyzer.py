@@ -3,11 +3,15 @@ import time
 import requests
 from datetime import datetime
 
+
 class PerformanceAnalyzer:
     def __init__(self):
         self.timeout = 30
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        
+        # Reuse a session to benefit from keep-alive and connection pooling
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': self.user_agent})
+
     def analyze_performance(self, url):
         """Comprehensive performance analysis"""
         performance_info = {
@@ -20,56 +24,56 @@ class PerformanceAnalyzer:
             'cache_headers': {},
             'pagespeed_score': None
         }
-        
+
         try:
             # Measure actual server response time (TTFB - Time To First Byte)
             start_time = time.time()
-            response = requests.get(
-                url, 
+            response = self.session.get(
+                url,
                 timeout=self.timeout,
-                headers={'User-Agent': self.user_agent},
                 allow_redirects=True,
-                stream=True  # Stream to get faster initial response
+                stream=True,  # Stream to get faster initial response
             )
+
             # Measure time to first byte (server response time)
             first_byte_time = time.time()
             ttfb = round((first_byte_time - start_time) * 1000, 2)  # ms
-            
+
             # Now get the full content for other metrics
             content = response.content
             end_time = time.time()
             total_time = round((end_time - start_time) * 1000, 2)  # ms
-            
+
             performance_info['response_time'] = ttfb  # Use TTFB as response time
             performance_info['total_load_time'] = total_time  # Full download time
             performance_info['status_code'] = response.status_code
             performance_info['page_size'] = len(content)
             performance_info['redirect_count'] = len(response.history)
-            
+
             # Server information
             headers = response.headers
             performance_info['server_info'] = {
                 'server': headers.get('Server', 'Unknown'),
                 'powered_by': headers.get('X-Powered-By', 'Unknown'),
-                'content_type': headers.get('Content-Type', 'Unknown')
+                'content_type': headers.get('Content-Type', 'Unknown'),
             }
-            
+
             # Compression
             performance_info['compression'] = headers.get('Content-Encoding', 'none')
-            
+
             # Cache headers
             performance_info['cache_headers'] = {
                 'cache_control': headers.get('Cache-Control'),
                 'expires': headers.get('Expires'),
                 'etag': headers.get('ETag'),
-                'last_modified': headers.get('Last-Modified')
+                'last_modified': headers.get('Last-Modified'),
             }
-            
+
         except Exception as e:
             performance_info['error'] = str(e)
-            
+
         return performance_info
-        
+
     def get_pagespeed_score(self, url):
         """Get PageSpeed Insights score (mock implementation)"""
         try:
@@ -84,5 +88,5 @@ class PerformanceAnalyzer:
                 else:
                     return {'mobile': 50, 'desktop': 60}
             return {'mobile': 0, 'desktop': 0}
-        except:
+        except Exception:
             return {'mobile': 0, 'desktop': 0}

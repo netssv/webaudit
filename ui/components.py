@@ -70,20 +70,20 @@ class UIComponents:
         if not audit_result:
             return None
         
-        st.markdown("### 📥 Export Results")
+        st.markdown("### Export Results")
         
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("📄 Export JSON", use_container_width=True):
+            if st.button("Export JSON", use_container_width=True):
                 return "JSON"
         
         with col2:
-            if st.button("📊 Export CSV", use_container_width=True):
+            if st.button("Export CSV", use_container_width=True):
                 return "CSV"
         
         with col3:
-            if st.button("📋 Export Summary", use_container_width=True):
+            if st.button("Export Summary", use_container_width=True):
                 return "Summary Report"
         
         return None
@@ -114,7 +114,7 @@ class UIComponents:
         )
         
         # Send Button
-        if st.button("🚀 Ask AI", type="primary"):
+        if st.button("Ask AI", type="primary"):
             return api_key, question
         
         return None, None
@@ -172,7 +172,7 @@ class UIComponents:
         """Display the main header"""
         st.markdown("""
         <div class="main-header" style="text-align: center; padding: 2rem 0;">
-            <h1>Web Audit Tool</h1>
+            <h1 style="font-size: 3.5rem; font-weight: 600;">Web Audit Tool</h1>
             <p>Comprehensive website analysis for SEO, performance, and security</p>
         </div>
         """, unsafe_allow_html=True)

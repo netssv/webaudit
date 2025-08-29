@@ -9,6 +9,14 @@ import plotly.graph_objects as go
 class SharedUIComponents:
     """Shared UI components to minimize code duplication across the application"""
     
+    class MockColumn:
+        """Mock column object for non-UI environments"""
+        def __enter__(self):
+            return self
+        
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+    
     # Social media platform icons - centralized definition
     PLATFORM_ICONS = {
         'Facebook': '📘', 'X (Twitter)': '❌', 'LinkedIn': '💼', 
@@ -23,17 +31,42 @@ class SharedUIComponents:
     }
     
     @staticmethod
+    def _safe_st_call(func, *args, **kwargs):
+        """Safely call streamlit functions with fallback to print"""
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            # Fallback to print for non-UI environments
+            if func.__name__ in ['warning', 'error', 'success', 'info']:
+                print(f"⚠️ {args[0] if args else 'Streamlit message'}")
+            elif func.__name__ == 'metric':
+                print(f"📊 {args[0] if args else 'Metric'}: {args[1] if len(args) > 1 else 'N/A'}")
+            elif func.__name__ == 'subheader':
+                print(f"📋 {args[0] if args else 'Header'}")
+            elif func.__name__ == 'write':
+                print(args[0] if args else '')
+            elif func.__name__ == 'caption':
+                print(f"💡 {args[0] if args else ''}")
+            elif func.__name__ == 'columns':
+                # Return mock column objects for columns
+                num_cols = args[0] if args else 1
+                return [SharedUIComponents.MockColumn() for _ in range(num_cols)]
+            elif func.__name__ == 'markdown':
+                print(args[0] if args else '')
+            return None
+    
+    @staticmethod
     def display_no_data_warning(module_name):
         """Standardized warning for missing data"""
-        st.warning(f"⚠️ No {module_name.lower()} data available")
+        SharedUIComponents._safe_st_call(st.warning, f"⚠️ No {module_name.lower()} data available")
     
     @staticmethod
     def display_error_state(module_name, error_msg=None):
         """Standardized error display"""
         if error_msg:
-            st.error(f"❌ {module_name} analysis failed: {error_msg}")
+            SharedUIComponents._safe_st_call(st.error, f"❌ {module_name} analysis failed: {error_msg}")
         else:
-            st.error(f"❌ {module_name} analysis failed")
+            SharedUIComponents._safe_st_call(st.error, f"❌ {module_name} analysis failed")
     
     @staticmethod
     def create_metric_columns(num_metrics, labels, values, deltas=None, helps=None):
@@ -97,13 +130,29 @@ class SharedUIComponents:
         """Standardized marketing tools display"""
         if not marketing_tools:
             return
-        
         st.subheader("🎯 Marketing Tools Detected")
         cols = st.columns(min(len(marketing_tools), max_columns))
-        
+
         for i, tool in enumerate(marketing_tools):
             with cols[i % max_columns]:
-                st.success(f"✅ {tool}")
+                # Support both legacy string entries and new dict entries
+                if isinstance(tool, dict):
+                    name = tool.get('name', 'Unknown')
+                    evidence = tool.get('evidence', '')
+                    confidence = (tool.get('confidence') or 'unknown').lower()
+
+                    if confidence == 'high':
+                        st.success(f"✅ {name} — {confidence.upper()}")
+                    elif confidence == 'medium':
+                        st.info(f"⚠️ {name} — {confidence}")
+                    else:
+                        st.warning(f"❕ {name} — {confidence}")
+
+                    if evidence:
+                        st.caption(evidence)
+                else:
+                    # Fallback for older string-based lists
+                    st.success(f"✅ {str(tool)}")
     
     @staticmethod
     def create_gauge_chart(value, title, max_value=100, color_scheme="auto"):
@@ -205,10 +254,47 @@ class SharedUIComponents:
             record_count = len(cname_records) if isinstance(cname_records, list) else cname_records
             st.metric("CNAME Records", record_count)
         
-        # Detailed DNS Records
-        st.markdown("#### 🔍 Detailed DNS Records")
-        
-        # Display A Records with TTL
+        # Detailed DNS Records - Collapsible section
+        with st.expander("🔍 Detailed DNS Records", expanded=False):
+            # Display A Records
+            if dns_data.get("a_records") and isinstance(dns_data["a_records"], list):
+                st.markdown("**A Records (IPv4 Addresses)**")
+                for i, record in enumerate(dns_data["a_records"], 1):
+                    st.text(f"{i}. {record}")
+            
+            # Display MX Records
+            if dns_data.get("mx_records") and isinstance(dns_data["mx_records"], list):
+                st.markdown("**MX Records (Mail Exchange)**")
+                for i, record in enumerate(dns_data["mx_records"], 1):
+                    st.text(f"{i}. {record}")
+            
+            # Display NS Records
+            if dns_data.get("ns_records") and isinstance(dns_data["ns_records"], list):
+                st.markdown("**NS Records (Name Servers)**")
+                for i, record in enumerate(dns_data["ns_records"], 1):
+                    st.text(f"{i}. {record}")
+            
+            # Display TXT Records
+            if dns_data.get("txt_records") and isinstance(dns_data["txt_records"], list):
+                st.markdown("**TXT Records (Text Records)**")
+                for i, record in enumerate(dns_data["txt_records"], 1):
+                    text = str(record)[:80]
+                    if len(str(record)) > 80:
+                        text += "..."
+                    st.text(f"{i}. {text}")
+            
+            # Display SOA Record
+            if dns_data.get("soa_record"):
+                st.markdown("**SOA Record (Start of Authority)**")
+                soa = dns_data["soa_record"]
+                if isinstance(soa, dict):
+                    st.text(f"Primary NS: {soa.get('mname', 'N/A')}")
+                    st.text(f"Admin Email: {soa.get('rname', 'N/A')}")
+                    st.text(f"Serial: {soa.get('serial', 'N/A')}")
+                    st.text(f"Refresh: {soa.get('refresh', 'N/A')}s")
+                    st.text(f"Retry: {soa.get('retry', 'N/A')}s")
+                    st.text(f"Expire: {soa.get('expire', 'N/A')}s")
+                    st.text(f"Minimum TTL: {soa.get('minimum', 'N/A')}s")        # Display A Records with TTL
         if dns_data.get("a_records") and isinstance(dns_data["a_records"], list):
             st.markdown("**A Records (IPv4 Addresses)**")
             for i, record in enumerate(dns_data["a_records"], 1):
@@ -291,6 +377,39 @@ class SharedUIComponents:
                 st.text(f"Retry: {soa.get('retry', 'N/A')}s")
                 st.text(f"Expire: {soa.get('expire', 'N/A')}s")
                 st.text(f"Minimum TTL: {soa.get('minimum', 'N/A')}s")
+        
+        # DNS Server Performance Analysis (outside expander)
+        performance_data = dns_data.get("dns_server_performance", [])
+        if performance_data and isinstance(performance_data, list) and len(performance_data) > 0:
+            st.markdown("#### ⚡ DNS Server Performance Analysis")
+            st.markdown("*Response times from popular public DNS servers*")
+            
+            for result in performance_data:
+                if result.get('status') == 'success':
+                    server_name = result.get('server_name', 'Unknown')
+                    server_ip = result.get('server_ip', 'N/A')
+                    response_time_ms = result.get('response_time_ms', 0)
+                    resolved_ip = result.get('resolved_ip', 'N/A')
+                    
+                    time_str = f"{response_time_ms:.1f}ms" if response_time_ms else "N/A"
+                    st.markdown(f"**{server_name}** [{server_ip}]: {time_str} -> {resolved_ip}")
+                else:
+                    server_name = result.get('server_name', 'Unknown')
+                    server_ip = result.get('server_ip', 'N/A')
+                    st.markdown(f"**{server_name}** [{server_ip}]: ❌ Failed")
+            
+            # Performance insights
+            successful_times = [r.get('response_time_ms', 0) for r in performance_data if r.get('status') == 'success' and r.get('response_time_ms')]
+            if successful_times:
+                avg_time = sum(successful_times) / len(successful_times)
+                fastest_time = min(successful_times)
+                
+                st.markdown("**📈 Insights:**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Average", f"{avg_time:.1f}ms")
+                with col2:
+                    st.metric("Fastest", f"{fastest_time:.1f}ms")
     
     @staticmethod
     def display_authority_metrics(ranking_data):
@@ -357,62 +476,68 @@ class SharedUIComponents:
             return
         
         # Basic SSL status
-        col1, col2, col3 = st.columns(3)
+        cols = SharedUIComponents._safe_st_call(st.columns, 3)
+        if not cols:
+            cols = [SharedUIComponents.MockColumn() for _ in range(3)]
+        col1, col2, col3 = cols
         
         with col1:
             ssl_valid = ssl_data.get("ssl_valid", False)
             if ssl_valid:
-                st.success("✅ SSL Certificate Valid")
+                SharedUIComponents._safe_st_call(st.success, "✅ SSL Certificate Valid")
             else:
-                st.error("❌ SSL Certificate Invalid")
+                SharedUIComponents._safe_st_call(st.error, "❌ SSL Certificate Invalid")
         
         with col2:
             ssl_grade = ssl_data.get("ssl_grade", "N/A")
             if ssl_grade != "N/A":
                 grade_color = "🟢" if ssl_grade in ["A+", "A"] else "🟡" if ssl_grade == "B" else "🔴"
-                st.metric("SSL Grade", f"{grade_color} {ssl_grade}")
+                SharedUIComponents._safe_st_call(st.metric, "SSL Grade", f"{grade_color} {ssl_grade}")
             else:
-                st.metric("SSL Grade", "Not Available")
+                SharedUIComponents._safe_st_call(st.metric, "SSL Grade", "Not Available")
         
         with col3:
-            st.metric("Security Status", "Checked" if ssl_valid else "Issues Found")
+            SharedUIComponents._safe_st_call(st.metric, "Security Status", "Checked" if ssl_valid else "Issues Found")
         
         # Enhanced SSL details if available
         if ssl_data.get("certificate_details"):
-            st.markdown("#### 🔒 Certificate Details")
+            SharedUIComponents._safe_st_call(st.markdown, "#### 🔒 Certificate Details")
             cert_details = ssl_data["certificate_details"]
             
-            col1, col2, col3 = st.columns(3)
+            cols = SharedUIComponents._safe_st_call(st.columns, 3)
+            if not cols:
+                cols = [SharedUIComponents.MockColumn() for _ in range(3)]
+            col1, col2, col3 = cols
             with col1:
                 if cert_details.get("issuer"):
-                    st.metric("Issued By", cert_details["issuer"])
+                    SharedUIComponents._safe_st_call(st.metric, "Issued By", cert_details["issuer"])
                 if cert_details.get("subject"):
-                    st.metric("Subject", cert_details["subject"])
+                    SharedUIComponents._safe_st_call(st.metric, "Subject", cert_details["subject"])
             
             with col2:
                 if cert_details.get("expires_in_days"):
                     days = cert_details["expires_in_days"]
                     color = "🟢" if days > 30 else "🟡" if days > 7 else "🔴"
-                    st.metric("Expires In", f"{color} {days} days")
+                    SharedUIComponents._safe_st_call(st.metric, "Expires In", f"{color} {days} days")
                 if cert_details.get("signature_algorithm"):
-                    st.metric("Algorithm", cert_details["signature_algorithm"])
+                    SharedUIComponents._safe_st_call(st.metric, "Algorithm", cert_details["signature_algorithm"])
             
             with col3:
                 if cert_details.get("key_size"):
-                    st.metric("Key Size", f"{cert_details['key_size']} bits")
+                    SharedUIComponents._safe_st_call(st.metric, "Key Size", f"{cert_details['key_size']} bits")
                 if cert_details.get("protocol_version"):
-                    st.metric("TLS Version", cert_details["protocol_version"])
+                    SharedUIComponents._safe_st_call(st.metric, "TLS Version", cert_details["protocol_version"])
         
         # Security recommendations
         if ssl_data.get("security_issues"):
-            st.markdown("#### ⚠️ Security Issues")
+            SharedUIComponents._safe_st_call(st.markdown, "#### ⚠️ Security Issues")
             for issue in ssl_data["security_issues"]:
-                st.warning(f"• {issue}")
+                SharedUIComponents._safe_st_call(st.warning, f"• {issue}")
                 
         if ssl_data.get("recommendations"):
-            st.markdown("#### 💡 Security Recommendations")
+            SharedUIComponents._safe_st_call(st.markdown, "#### 💡 Security Recommendations")
             for rec in ssl_data["recommendations"]:
-                st.info(f"• {rec}")
+                SharedUIComponents._safe_st_call(st.info, f"• {rec}")
     
     @staticmethod
     def display_todo_list(todo_list, max_items=5):

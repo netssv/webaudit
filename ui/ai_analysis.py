@@ -394,7 +394,7 @@ def display_ai_analysis(results):
                 )
             
             with col3:
-                if st.button("📊 Show Raw Data", help="Toggle raw data view"):
+                if st.button("Show Raw Data", help="Toggle raw data view"):
                     if "show_raw_ai_data" not in st.session_state:
                         st.session_state.show_raw_ai_data = False
                     st.session_state.show_raw_ai_data = not st.session_state.show_raw_ai_data
@@ -402,8 +402,8 @@ def display_ai_analysis(results):
             
             # Show raw data if requested
             if st.session_state.get("show_raw_ai_data", False):
-                st.markdown("### 📋 Raw Audit Data")
-                with st.expander("🔍 View Complete Raw Data", expanded=False):
+                st.markdown("### Raw Audit Data")
+                with st.expander("View Complete Raw Data", expanded=False):
                     try:
                         st.json(results)
                     except Exception as e:

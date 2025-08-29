@@ -85,9 +85,9 @@ class AppStyling:
                 letter-spacing: -0.02em !important;
             }
             
-            h1 { font-size: 2.2rem !important; font-weight: 200 !important; }
-            h2 { font-size: 1.8rem !important; font-weight: 300 !important; }
-            h3 { font-size: 1.4rem !important; font-weight: 400 !important; }
+            h1 { font-size: 3.2rem !important; font-weight: 200 !important; }
+            h2 { font-size: 1.2rem !important; font-weight: 300 !important; }
+            h3 { font-size: 1.0rem !important; font-weight: 400 !important; }
             
             /* Input styling - Modern minimal design */
             .stSelectbox label, .stTextInput label, .stRadio label, .stCheckbox label {
@@ -153,18 +153,27 @@ class AppStyling:
                 transform: translateY(1px) !important;
             }
             
-            /* Primary action buttons */
-            .stButton > button[kind="primary"] {
+            /* Primary action buttons - Enhanced specificity */
+            .stButton > button[kind="primary"],
+            button[kind="primary"] {
                 background-color: #1976d2 !important;
                 color: #ffffff !important;
                 border: 2px solid #1976d2 !important;
                 font-weight: 600 !important;
+                border-radius: 8px !important;
+                padding: 0.6rem 1.2rem !important;
+                font-size: 0.9rem !important;
+                transition: all 0.2s ease !important;
+                letter-spacing: 0.01em !important;
+                box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
             }
-            
-            .stButton > button[kind="primary"]:hover {
+
+            .stButton > button[kind="primary"]:hover,
+            button[kind="primary"]:hover {
                 background-color: #1565c0 !important;
                 border-color: #1565c0 !important;
                 box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;
+                transform: translateY(-1px) !important;
             }
             
             /* Download and action buttons - Enhanced styling */
@@ -272,14 +281,14 @@ class AppStyling:
                 letter-spacing: -0.02em !important;
             }
             
-            h1 { font-size: 2.2rem !important; font-weight: 200 !important; }
-            h2 { font-size: 1.8rem !important; font-weight: 300 !important; }
-            h3 { font-size: 1.4rem !important; font-weight: 400 !important; }
+            h1 { font-size: 3.2rem !important; font-weight: 200 !important; }
+            h2 { font-size: 1.2rem !important; font-weight: 300 !important; }
+            h3 { font-size: 1.0rem !important; font-weight: 400 !important; }
             
             /* Main title and subtitle overrides for dark mode */
             .main-title {
                 color: #ffffff !important;
-                font-size: 2.2rem !important;
+                font-size: 3.2rem !important;
                 font-weight: 400 !important;
                 margin: 0 !important;
                 letter-spacing: -0.02em !important;
@@ -369,7 +378,7 @@ class AppStyling:
             .stSidebar .stCheckbox label {
                 color: #f5f5f5 !important;
                 font-weight: 400 !important;
-                font-size: 0.9rem !important;
+                font-size: 0.85rem !important;
                 line-height: 1.4 !important;
             }
             
@@ -379,8 +388,9 @@ class AppStyling:
                 font-weight: 300 !important;
                 background: none !important;
                 background-color: transparent !important;
-                margin: 1rem 0 0.5rem 0 !important;
+                margin: 0.8rem 0 0.4rem 0 !important;
                 letter-spacing: -0.01em !important;
+                font-size: 0.95rem !important;
             }
             
             /* Dark mode buttons - Clean and consistent */
@@ -404,15 +414,23 @@ class AppStyling:
                 box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1) !important;
             }
             
-            /* Primary buttons in dark mode */
-            .stButton > button[kind="primary"] {
+            /* Primary buttons in dark mode - Enhanced specificity */
+            .stButton > button[kind="primary"],
+            button[kind="primary"] {
                 background-color: #1976d2 !important;
                 color: #ffffff !important;
                 border: 2px solid #1976d2 !important;
                 font-weight: 600 !important;
+                border-radius: 8px !important;
+                padding: 0.6rem 1.2rem !important;
+                font-size: 0.9rem !important;
+                transition: all 0.2s ease !important;
+                letter-spacing: 0.01em !important;
+                box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
             }
-            
-            .stButton > button[kind="primary"]:hover {
+
+            .stButton > button[kind="primary"]:hover,
+            button[kind="primary"]:hover {
                 background-color: #1565c0 !important;
                 border-color: #1565c0 !important;
                 box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;
@@ -718,18 +736,28 @@ class AppStyling:
                 box-shadow: none !important;
             }
             
-            /* Primary button styling */
-            .stButton > button[kind="primary"] {
-                background: #000000 !important;
+            /* Primary button styling - Enhanced specificity */
+            .stButton > button[kind="primary"],
+            button[kind="primary"] {
+                background-color: #1976d2 !important;
                 color: #ffffff !important;
-                border: 2px solid #000000 !important;
-                font-weight: 700 !important;
+                border: 2px solid #1976d2 !important;
+                font-weight: 600 !important;
+                border-radius: 8px !important;
+                padding: 0.6rem 1.2rem !important;
+                font-size: 0.9rem !important;
+                transition: all 0.2s ease !important;
+                letter-spacing: 0.01em !important;
+                box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
             }
-            
-            .stButton > button[kind="primary"]:hover {
-                background: #333333 !important;
-                border: 2px solid #333333 !important;
-                color: #ffffff !important;
+
+            .stButton > button[kind="primary"]:hover,
+            button[kind="primary"]:hover {
+                background-color: #1565c0 !important;
+                border-color: #1565c0 !important;
+                box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;
+                transform: translateY(-1px) !important;
+            }
             }
             
             /* Download button styling */
@@ -781,7 +809,7 @@ class AppStyling:
             .stSidebar .stCheckbox label {
                 color: #1a1a1a !important;
                 font-weight: 400 !important;
-                font-size: 0.9rem !important;
+                font-size: 0.85rem !important;
                 line-height: 1.4 !important;
             }
             
@@ -833,6 +861,7 @@ class AppStyling:
                 background-color: transparent !important;
                 margin: 1rem 0 0.5rem 0 !important;
                 letter-spacing: -0.01em !important;
+                font-size: 0.95rem !important;
             }
             
             /* Sidebar dividers - Subtle */
@@ -860,14 +889,23 @@ class AppStyling:
             }
             
             .stSidebar .stButton > button[kind="primary"] {
-                background-color: #1a1a1a !important;
+                background-color: #1976d2 !important;
                 color: #ffffff !important;
-                border-color: #1a1a1a !important;
+                border: 2px solid #1976d2 !important;
+                font-weight: 600 !important;
+                border-radius: 6px !important;
+                padding: 0.5rem 1rem !important;
+                font-size: 0.85rem !important;
+                transition: all 0.2s ease !important;
+                letter-spacing: 0.01em !important;
+                box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
             }
-            
+
             .stSidebar .stButton > button[kind="primary"]:hover {
-                background-color: #2d2d2d !important;
-                border-color: #2d2d2d !important;
+                background-color: #1565c0 !important;
+                border-color: #1565c0 !important;
+                box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;
+                transform: translateY(-1px) !important;
             }
         </style>
         """, unsafe_allow_html=True)

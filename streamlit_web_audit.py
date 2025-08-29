@@ -38,9 +38,8 @@ class WebAuditApp:
     
     def run(self):
         """Run the main application"""
-        # Apply styling
-        dark_mode = st.session_state.get('dark_mode', False)
-        AppStyling.apply_complete_theme(dark_mode)
+        # Apply styling (fixed light theme)
+        AppStyling.apply_complete_theme(dark_mode=False)
         
         # Display header
         CoreUI.display_header()

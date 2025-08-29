@@ -9,6 +9,29 @@ class SEOMarketingAnalyzer:
     def __init__(self):
         self.timeout = 10
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        # Precompile marketing detection patterns for performance
+        self._marketing_patterns = {
+            # GA4 IDs are like G-XXXXXXXX (use stricter length to avoid short words)
+            'Google Analytics': [re.compile(r'google-analytics\.com', re.I), re.compile(r'gtag\(', re.I), re.compile(r'UA-\d+-\d+', re.I), re.compile(r'\bG-[A-Z0-9]{7,}\b', re.I)],
+            'Google Tag Manager': [re.compile(r'googletagmanager\.com', re.I), re.compile(r'\bGTM-[A-Z0-9]{5,}\b', re.I)],
+            'Facebook Pixel': [re.compile(r'connect\.facebook\.net', re.I), re.compile(r'fbq\(', re.I), re.compile(r'_fbp', re.I)],
+            'LinkedIn Insight Tag': [re.compile(r'snap\.licdn\.com', re.I), re.compile(r'li\.pixel', re.I)],
+            'X (Twitter) Pixel': [re.compile(r'static\.ads-twitter\.com', re.I), re.compile(r'twitter\.com\/i\/ads', re.I), re.compile(r'analytics\.twitter', re.I)],
+            'HubSpot': [re.compile(r'hs-script-loader', re.I), re.compile(r'js\.hs-analytics', re.I), re.compile(r'hubspot', re.I)],
+            'Mailchimp': [re.compile(r'mailchimp', re.I), re.compile(r'mc\.us\d+\.list-manage\.com', re.I)],
+            'Hotjar': [re.compile(r'hotjar\.com', re.I), re.compile(r'hj\(', re.I)],
+            'Mixpanel': [re.compile(r'mixpanel', re.I), re.compile(r'mixpanel\.init', re.I)],
+            'Segment': [re.compile(r'cdn\.segment\.com', re.I), re.compile(r'analytics\.load', re.I)],
+            'Klaviyo': [re.compile(r'klaviyo', re.I)],
+            'Pardot': [re.compile(r'pardot\.com', re.I)],
+            'Marketo': [re.compile(r'marketo\.com', re.I), re.compile(r'munchkin', re.I)],
+            'Adobe Analytics': [re.compile(r'omni?ture', re.I), re.compile(r'adobe\.com.*analytics', re.I)],
+            'Crazy Egg': [re.compile(r'crazyegg\.com', re.I)],
+            'Optimizely': [re.compile(r'optimizely', re.I), re.compile(r'cdn\.optimizely', re.I)],
+            'FullStory': [re.compile(r'fullstory', re.I), re.compile(r'fullstory\.com', re.I)],
+            'Intercom': [re.compile(r'intercom', re.I), re.compile(r'widget\.intercom', re.I)],
+            'VWO': [re.compile(r'vwo', re.I), re.compile(r'_vwo', re.I)],
+        }
         
     def analyze_seo_marketing(self, url, soup=None, response=None):
         """Comprehensive SEO and marketing analysis"""
@@ -163,35 +186,101 @@ class SEOMarketingAnalyzer:
         return robots.get('content') if robots else None
         
     def _detect_marketing_tools(self, soup):
-        """Detect marketing and analytics tools"""
-        tools = []
-        page_content = str(soup)
-        
-        marketing_patterns = {
-            'Google Analytics': [r'google-analytics\.com', r'gtag\(', r'ga\('],
-            'Google Tag Manager': [r'googletagmanager\.com'],
-            'Facebook Pixel': [r'facebook\.net/en_US/fbevents\.js', r'fbq\('],
-            'LinkedIn Insight Tag': [r'snap\.licdn\.com'],
-            'X (Twitter) Pixel': [r'static\.ads-twitter\.com'],
-            'HubSpot': [r'js\.hs-scripts\.com', r'hubspot'],
-            'Mailchimp': [r'mailchimp', r'mc\.us\d+\.list-manage\.com'],
-            'Hotjar': [r'hotjar\.com'],
-            'Mixpanel': [r'mixpanel\.com'],
-            'Segment': [r'segment\.com', r'analytics\.js'],
-            'Klaviyo': [r'klaviyo'],
-            'Pardot': [r'pardot\.com'],
-            'Marketo': [r'marketo\.com', r'munchkin'],
-            'Adobe Analytics': [r'omniture\.com', r'adobe\.com.*analytics'],
-            'Crazy Egg': [r'crazyegg\.com']
-        }
-        
-        for tool, patterns in marketing_patterns.items():
-            for pattern in patterns:
-                if re.search(pattern, page_content, re.IGNORECASE):
-                    tools.append(tool)
+        """Detect marketing and analytics tools using script srcs, inline JS, forms and cookies."""
+        detected = []
+        page_html = str(soup)
+
+        # Collect script srcs and inline script content
+        script_srcs = [tag.get('src') for tag in soup.find_all('script') if tag.get('src')]
+        inline_scripts = [tag.string or '' for tag in soup.find_all('script') if not tag.get('src')]
+
+        # Collect form actions
+        form_actions = [form.get('action', '') for form in soup.find_all('form')]
+
+        # Collect meta tags and noscript content
+        meta_tags = ' '.join([str(m) for m in soup.find_all('meta')])
+        noscript = ' '.join([str(n) for n in soup.find_all('noscript')])
+
+        # Helper to register detection with evidence and confidence
+        def register(name, evidence, confidence='medium'):
+            detected.append({'name': name, 'evidence': evidence, 'confidence': confidence})
+
+        # Check script srcs and inline scripts against compiled patterns
+        for tool, patterns in self._marketing_patterns.items():
+            found = False
+            for pat in patterns:
+                # Check script srcs
+                for src in script_srcs:
+                    try:
+                        if not src:
+                            continue
+                        m = pat.search(src)
+                        if m:
+                            register(tool, f'script src match: {m.group(0) or src}', 'high')
+                            found = True
+                            break
+                    except Exception:
+                        continue
+                if found:
                     break
-                    
-        return list(set(tools))
+
+                # Check inline scripts
+                for content in inline_scripts:
+                    try:
+                        if not content:
+                            continue
+                        m = pat.search(content)
+                        if m:
+                            register(tool, f'inline script match: {m.group(0)}', 'high')
+                            found = True
+                            break
+                    except Exception:
+                        continue
+                if found:
+                    break
+
+                # Check page HTML fallback (for meta tags or noscript images)
+                try:
+                    m_page = pat.search(page_html) or pat.search(meta_tags) or pat.search(noscript)
+                    if m_page:
+                        register(tool, f'page content match: {m_page.group(0)}', 'medium')
+                        found = True
+                        break
+                except Exception:
+                    continue
+
+        # Additional heuristics: measurement IDs, form actions and cookie names
+        # GA/Tag Manager IDs
+        # Find GA / GTM IDs with stricter patterns and minimal length checks
+        ga_ids = re.findall(r'\bG-[A-Z0-9]{7,}\b|\bUA-\d{4,}-\d+\b', page_html, flags=re.I)
+        for idv in ga_ids:
+            # normalize and check plausible length
+            if idv and len(idv) >= 8:
+                register('Google Analytics', f'measurement id: {idv}', 'high')
+            else:
+                register('Google Analytics', f'measurement id (low confidence): {idv}', 'low')
+
+        gtm_ids = re.findall(r'\bGTM-[A-Z0-9]{5,}\b', page_html, flags=re.I)
+        for idv in gtm_ids:
+            if idv and len(idv) >= 7:
+                register('Google Tag Manager', f'GTM id: {idv}', 'high')
+            else:
+                register('Google Tag Manager', f'GTM id (low confidence): {idv}', 'low')
+
+        # Form actions (Mailchimp, Klaviyo, HubSpot)
+        for action in form_actions:
+            if action and re.search(r'mailchimp|list-manage|klaviyo|hubspot|pardot', action, re.I):
+                register('Form-based marketing tool', f'form action: {action}', 'medium')
+
+        # Deduplicate by tool name keeping highest confidence evidence
+        result = {}
+        confidence_rank = {'low': 0, 'medium': 1, 'high': 2}
+        for item in detected:
+            name = item['name']
+            if name not in result or confidence_rank[item['confidence']] > confidence_rank[result[name]['confidence']]:
+                result[name] = item
+
+        return list(result.values())
         
     def _detect_social_media_links(self, soup):
         """Detect social media platform links"""
