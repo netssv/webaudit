@@ -153,9 +153,11 @@ class AppStyling:
                 transform: translateY(1px) !important;
             }
             
-            /* Primary action buttons - Enhanced specificity */
+            /* Primary action buttons - Enhanced specificity and force override */
             .stButton > button[kind="primary"],
-            button[kind="primary"] {
+            button[kind="primary"],
+            .stButton button[type="primary"],
+            button[type="primary"] {
                 background-color: #1976d2 !important;
                 color: #ffffff !important;
                 border: 2px solid #1976d2 !important;
@@ -166,14 +168,18 @@ class AppStyling:
                 transition: all 0.2s ease !important;
                 letter-spacing: 0.01em !important;
                 box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
+                text-decoration: none !important;
             }
 
             .stButton > button[kind="primary"]:hover,
-            button[kind="primary"]:hover {
+            button[kind="primary"]:hover,
+            .stButton button[type="primary"]:hover,
+            button[type="primary"]:hover {
                 background-color: #1565c0 !important;
                 border-color: #1565c0 !important;
                 box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;
                 transform: translateY(-1px) !important;
+                color: #ffffff !important;
             }
             
             /* Download and action buttons - Enhanced styling */
@@ -416,7 +422,9 @@ class AppStyling:
             
             /* Primary buttons in dark mode - Enhanced specificity */
             .stButton > button[kind="primary"],
-            button[kind="primary"] {
+            button[kind="primary"],
+            .stButton button[type="primary"],
+            button[type="primary"] {
                 background-color: #1976d2 !important;
                 color: #ffffff !important;
                 border: 2px solid #1976d2 !important;
@@ -427,10 +435,13 @@ class AppStyling:
                 transition: all 0.2s ease !important;
                 letter-spacing: 0.01em !important;
                 box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
+                text-decoration: none !important;
             }
 
             .stButton > button[kind="primary"]:hover,
-            button[kind="primary"]:hover {
+            button[kind="primary"]:hover,
+            .stButton button[type="primary"]:hover,
+            button[type="primary"]:hover {
                 background-color: #1565c0 !important;
                 border-color: #1565c0 !important;
                 box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;

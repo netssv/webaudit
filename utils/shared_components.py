@@ -225,55 +225,93 @@ class SharedUIComponents:
     
     @staticmethod
     def display_dns_records(dns_data):
-        """Enhanced DNS records display with detailed information"""
+        """Clean DNS records display with detailed information only"""
         if not dns_data:
             SharedUIComponents.display_no_data_warning("DNS")
             return
-        
-        # DNS Records Overview
+
+        # DNS Records Overview - Simple metrics
         st.markdown("#### 📊 DNS Records Summary")
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             a_records = dns_data.get("a_records", [])
             record_count = len(a_records) if isinstance(a_records, list) else a_records
             st.metric("A Records", record_count)
-        
+
         with col2:
             mx_records = dns_data.get("mx_records", [])
             record_count = len(mx_records) if isinstance(mx_records, list) else mx_records
             st.metric("MX Records", record_count)
-        
+
         with col3:
             ns_records = dns_data.get("ns_records", [])
             record_count = len(ns_records) if isinstance(ns_records, list) else ns_records
             st.metric("NS Records", record_count)
-        
+
         with col4:
             cname_records = dns_data.get("cname_records", [])
             record_count = len(cname_records) if isinstance(cname_records, list) else cname_records
             st.metric("CNAME Records", record_count)
-        
-        # Detailed DNS Records - Collapsible section
+
+        # Detailed DNS Records - Clean expandable section
         with st.expander("🔍 Detailed DNS Records", expanded=False):
-            # Display A Records
+            # Display A Records with TTL
             if dns_data.get("a_records") and isinstance(dns_data["a_records"], list):
                 st.markdown("**A Records (IPv4 Addresses)**")
                 for i, record in enumerate(dns_data["a_records"], 1):
-                    st.text(f"{i}. {record}")
-            
-            # Display MX Records
+                    if isinstance(record, dict):
+                        ip = record.get("address", record.get("ip", "N/A"))
+                        ttl = record.get("ttl", "N/A")
+                        st.text(f"{i}. {ip} (TTL: {ttl})")
+                    else:
+                        st.text(f"{i}. {record}")
+
+            # Display AAAA Records (IPv6)
+            if dns_data.get("aaaa_records") and isinstance(dns_data["aaaa_records"], list):
+                st.markdown("**AAAA Records (IPv6 Addresses)**")
+                for i, record in enumerate(dns_data["aaaa_records"], 1):
+                    if isinstance(record, dict):
+                        ip = record.get("address", record.get("ip", "N/A"))
+                        ttl = record.get("ttl", "N/A")
+                        st.text(f"{i}. {ip} (TTL: {ttl})")
+                    else:
+                        st.text(f"{i}. {record}")
+
+            # Display MX Records with priority and TTL
             if dns_data.get("mx_records") and isinstance(dns_data["mx_records"], list):
                 st.markdown("**MX Records (Mail Exchange)**")
                 for i, record in enumerate(dns_data["mx_records"], 1):
-                    st.text(f"{i}. {record}")
-            
-            # Display NS Records
+                    if isinstance(record, dict):
+                        server = record.get("exchange", record.get("server", "N/A"))
+                        priority = record.get("priority", "N/A")
+                        ttl = record.get("ttl", "N/A")
+                        st.text(f"{i}. {server} (Priority: {priority}, TTL: {ttl})")
+                    else:
+                        st.text(f"{i}. {record}")
+
+            # Display NS Records with TTL
             if dns_data.get("ns_records") and isinstance(dns_data["ns_records"], list):
                 st.markdown("**NS Records (Name Servers)**")
                 for i, record in enumerate(dns_data["ns_records"], 1):
-                    st.text(f"{i}. {record}")
-            
+                    if isinstance(record, dict):
+                        server = record.get("target", record.get("server", "N/A"))
+                        ttl = record.get("ttl", "N/A")
+                        st.text(f"{i}. {server} (TTL: {ttl})")
+                    else:
+                        st.text(f"{i}. {record}")
+
+            # Display CNAME Records with TTL
+            if dns_data.get("cname_records") and isinstance(dns_data["cname_records"], list):
+                st.markdown("**CNAME Records (Canonical Names)**")
+                for i, record in enumerate(dns_data["cname_records"], 1):
+                    if isinstance(record, dict):
+                        target = record.get("target", record.get("cname", "N/A"))
+                        ttl = record.get("ttl", "N/A")
+                        st.text(f"{i}. {target} (TTL: {ttl})")
+                    else:
+                        st.text(f"{i}. {record}")
+
             # Display TXT Records
             if dns_data.get("txt_records") and isinstance(dns_data["txt_records"], list):
                 st.markdown("**TXT Records (Text Records)**")
@@ -282,7 +320,7 @@ class SharedUIComponents:
                     if len(str(record)) > 80:
                         text += "..."
                     st.text(f"{i}. {text}")
-            
+
             # Display SOA Record
             if dns_data.get("soa_record"):
                 st.markdown("**SOA Record (Start of Authority)**")
@@ -294,89 +332,7 @@ class SharedUIComponents:
                     st.text(f"Refresh: {soa.get('refresh', 'N/A')}s")
                     st.text(f"Retry: {soa.get('retry', 'N/A')}s")
                     st.text(f"Expire: {soa.get('expire', 'N/A')}s")
-                    st.text(f"Minimum TTL: {soa.get('minimum', 'N/A')}s")        # Display A Records with TTL
-        if dns_data.get("a_records") and isinstance(dns_data["a_records"], list):
-            st.markdown("**A Records (IPv4 Addresses)**")
-            for i, record in enumerate(dns_data["a_records"], 1):
-                if isinstance(record, dict):
-                    ip = record.get("address", record.get("ip", "N/A"))
-                    ttl = record.get("ttl", "N/A")
-                    st.text(f"{i}. {ip} (TTL: {ttl})")
-                else:
-                    st.text(f"{i}. {record}")
-        
-        # Display AAAA Records (IPv6)
-        if dns_data.get("aaaa_records"):
-            st.markdown("**AAAA Records (IPv6 Addresses)**")
-            aaaa_records = dns_data["aaaa_records"]
-            if isinstance(aaaa_records, list):
-                for i, record in enumerate(aaaa_records, 1):
-                    if isinstance(record, dict):
-                        ip = record.get("address", record.get("ip", "N/A"))
-                        ttl = record.get("ttl", "N/A")
-                        st.text(f"{i}. {ip} (TTL: {ttl})")
-                    else:
-                        st.text(f"{i}. {record}")
-        
-        # Display MX Records with priority and TTL
-        if dns_data.get("mx_records") and isinstance(dns_data["mx_records"], list):
-            st.markdown("**MX Records (Mail Exchange)**")
-            for i, record in enumerate(dns_data["mx_records"], 1):
-                if isinstance(record, dict):
-                    server = record.get("exchange", record.get("server", "N/A"))
-                    priority = record.get("priority", "N/A")
-                    ttl = record.get("ttl", "N/A")
-                    st.text(f"{i}. {server} (Priority: {priority}, TTL: {ttl})")
-                else:
-                    st.text(f"{i}. {record}")
-        
-        # Display NS Records with TTL
-        if dns_data.get("ns_records") and isinstance(dns_data["ns_records"], list):
-            st.markdown("**NS Records (Name Servers)**")
-            for i, record in enumerate(dns_data["ns_records"], 1):
-                if isinstance(record, dict):
-                    server = record.get("target", record.get("server", "N/A"))
-                    ttl = record.get("ttl", "N/A")
-                    st.text(f"{i}. {server} (TTL: {ttl})")
-                else:
-                    st.text(f"{i}. {record}")
-        
-        # Display CNAME Records with TTL
-        if dns_data.get("cname_records") and isinstance(dns_data["cname_records"], list):
-            st.markdown("**CNAME Records (Canonical Names)**")
-            for i, record in enumerate(dns_data["cname_records"], 1):
-                if isinstance(record, dict):
-                    target = record.get("target", record.get("cname", "N/A"))
-                    ttl = record.get("ttl", "N/A")
-                    st.text(f"{i}. {target} (TTL: {ttl})")
-                else:
-                    st.text(f"{i}. {record}")
-        
-        # Display TXT Records
-        if dns_data.get("txt_records"):
-            st.markdown("**TXT Records (Text Records)**")
-            txt_records = dns_data["txt_records"]
-            if isinstance(txt_records, list):
-                for i, record in enumerate(txt_records, 1):
-                    if isinstance(record, dict):
-                        text = record.get("text", record.get("data", "N/A"))
-                        ttl = record.get("ttl", "N/A")
-                        st.text(f"{i}. {text[:80]}{'...' if len(str(text)) > 80 else ''} (TTL: {ttl})")
-                    else:
-                        st.text(f"{i}. {str(record)[:80]}{'...' if len(str(record)) > 80 else ''}")
-        
-        # Display SOA Record
-        if dns_data.get("soa_record"):
-            st.markdown("**SOA Record (Start of Authority)**")
-            soa = dns_data["soa_record"]
-            if isinstance(soa, dict):
-                st.text(f"Primary NS: {soa.get('mname', 'N/A')}")
-                st.text(f"Admin Email: {soa.get('rname', 'N/A')}")
-                st.text(f"Serial: {soa.get('serial', 'N/A')}")
-                st.text(f"Refresh: {soa.get('refresh', 'N/A')}s")
-                st.text(f"Retry: {soa.get('retry', 'N/A')}s")
-                st.text(f"Expire: {soa.get('expire', 'N/A')}s")
-                st.text(f"Minimum TTL: {soa.get('minimum', 'N/A')}s")
+                    st.text(f"Minimum TTL: {soa.get('minimum', 'N/A')}s")
         
         # DNS Server Performance Analysis (outside expander)
         performance_data = dns_data.get("dns_server_performance", [])

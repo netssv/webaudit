@@ -55,9 +55,21 @@ class OptimizedDisplays:
             st.error("❌ No valid data found in audit results")
             return
         
-        # Create and display tabs
+        # Initialize session state for tab management
+        if 'current_tab_index' not in st.session_state:
+            st.session_state.current_tab_index = 0
+        
+        # Create tabs with session state management
         tabs = st.tabs(available_tabs)
         
+        # Initialize tab state if not exists
+        if 'selected_tab' not in st.session_state:
+            st.session_state.selected_tab = available_tabs[0]
+        
+        # Add a hidden element to help with state management
+        tab_state = st.empty()
+        
+        # Display content for all tabs (they will be hidden/shown by Streamlit)
         for i, tab_name in enumerate(available_tabs):
             with tabs[i]:
                 if tab_name in tab_data:
@@ -73,6 +85,10 @@ class OptimizedDisplays:
                 elif tab_name == "📄 Raw Data":
                     from ui.ai_components import AIAnalysisComponents
                     AIAnalysisComponents.display_raw_data_only(results)
+        
+        # Add navigation hint
+        st.markdown("---")
+        st.info("💡 **Navigation Tip**: Click on any tab above to switch views. The Raw Data tab contains complete audit information with download options.")
     
     @staticmethod
     def display_performance_analysis(performance_data):

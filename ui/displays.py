@@ -432,31 +432,9 @@ def display_security_analysis(ssl_data):
 
 
 def display_dns_analysis(dns_data):
-    """Display DNS analysis"""
-    if not dns_data:
-        st.warning("⚠️ No DNS data available")
-        return
-    
-    st.markdown("### 🌐 DNS Analysis")
-    
-    # DNS Records Overview
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        a_records = dns_data.get("a_records", [])
-        st.metric("A Records", len(a_records) if isinstance(a_records, list) else a_records)
-    
-    with col2:
-        mx_records = dns_data.get("mx_records", [])
-        st.metric("MX Records", len(mx_records) if isinstance(mx_records, list) else mx_records)
-    
-    with col3:
-        ns_records = dns_data.get("ns_records", [])
-        st.metric("NS Records", len(ns_records) if isinstance(ns_records, list) else ns_records)
-    
-    with col4:
-        cname_records = dns_data.get("cname_records", [])
-        st.metric("CNAME Records", len(cname_records) if isinstance(cname_records, list) else cname_records)
+    """Display DNS analysis using shared components"""
+    from utils.shared_components import SharedUIComponents
+    SharedUIComponents.display_dns_records(dns_data)
 
 
 def display_ranking_analysis(ranking_data):
