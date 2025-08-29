@@ -14,8 +14,7 @@ from ui.displays import (
     display_header, 
     display_search_interface,
     display_loading_progress,
-    display_audit_results,
-    handle_example_domain
+    display_audit_results
 )
 from ui.ai_analysis import display_ai_analysis
 from web_auditor import WebAuditor

@@ -4,10 +4,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from datetime import datetime
-
-class UIComponents:
-    """UI Components for the web audit application"""
-import streamlit as st
 from config.settings import AppConfig, SessionConfig
 
 class UIComponents:

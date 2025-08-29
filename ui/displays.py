@@ -78,28 +78,6 @@ def display_search_interface():
     # Update session state
     if url != st.session_state.url_input:
         st.session_state.url_input = url
-    
-    def handle_example_domain(example_url):
-        """Handle example domain button clicks"""
-        st.session_state.url_input = example_url
-        st.rerun()
-    
-    # Example domains
-    st.markdown("**Quick examples:**")
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        if st.button("📰 BBC", help="Analyze BBC website"):
-            handle_example_domain("https://www.bbc.com")
-    with col2:
-        if st.button("🛒 Amazon", help="Analyze Amazon website"):
-            handle_example_domain("https://www.amazon.com")
-    with col3:
-        if st.button("🐦 Twitter", help="Analyze Twitter website"):
-            handle_example_domain("https://twitter.com")
-    with col4:
-        if st.button("📚 Wikipedia", help="Analyze Wikipedia website"):
-            handle_example_domain("https://www.wikipedia.org")
 
 
 def display_loading_progress():
