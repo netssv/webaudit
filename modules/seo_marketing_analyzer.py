@@ -74,6 +74,16 @@ class SEOMarketingAnalyzer:
         # Merge basic info with enhanced analysis
         seo_info.update(enhanced_analysis)
         
+        # Calculate and store the simple SEO score
+        seo_info['seo_score'] = self._calculate_seo_score(seo_info)
+        
+        # Surface page_info values to top level for display
+        page_info = enhanced_analysis.get('page_info', {})
+        if page_info:
+            seo_info.setdefault('language', page_info.get('language', 'N/A'))
+            seo_info.setdefault('charset', page_info.get('charset', 'N/A'))
+            seo_info.setdefault('viewport', page_info.get('viewport', 'N/A'))
+        
         return seo_info
         
     def _get_title(self, soup):

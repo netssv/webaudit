@@ -33,6 +33,8 @@ class DNSAnalyzer:
             'mx_records': [],
             'ns_records': [],
             'txt_records': [],
+            'cname_records': [],
+            'ttl_info': {},
             'whois_info': None,
             'dns_response_time': None,
             'dns_server_performance': []
@@ -50,6 +52,7 @@ class DNSAnalyzer:
             try:
                 a_records = self.dns_resolver.resolve(domain, 'A')
                 dns_info['a_records'] = [str(record) for record in a_records]
+                dns_info['ttl_info']['A'] = a_records.rrset.ttl
             except Exception:
                 pass
 
@@ -57,6 +60,7 @@ class DNSAnalyzer:
             try:
                 mx_records = self.dns_resolver.resolve(domain, 'MX')
                 dns_info['mx_records'] = [f"{getattr(record, 'preference', '')} {getattr(record, 'exchange', '')}" for record in mx_records]
+                dns_info['ttl_info']['MX'] = mx_records.rrset.ttl
             except Exception:
                 pass
 
@@ -64,6 +68,7 @@ class DNSAnalyzer:
             try:
                 ns_records = self.dns_resolver.resolve(domain, 'NS')
                 dns_info['ns_records'] = [str(record) for record in ns_records]
+                dns_info['ttl_info']['NS'] = ns_records.rrset.ttl
             except Exception:
                 pass
 
@@ -71,6 +76,15 @@ class DNSAnalyzer:
             try:
                 txt_records = self.dns_resolver.resolve(domain, 'TXT')
                 dns_info['txt_records'] = [str(record) for record in txt_records]
+                dns_info['ttl_info']['TXT'] = txt_records.rrset.ttl
+            except Exception:
+                pass
+
+            # Get CNAME records
+            try:
+                cname_records = self.dns_resolver.resolve(domain, 'CNAME')
+                dns_info['cname_records'] = [str(record) for record in cname_records]
+                dns_info['ttl_info']['CNAME'] = cname_records.rrset.ttl
             except Exception:
                 pass
             

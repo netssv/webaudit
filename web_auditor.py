@@ -8,6 +8,9 @@ from modules.ssl_analyzer import SSLAnalyzer
 from modules.seo_marketing_analyzer import SEOMarketingAnalyzer
 from modules.performance_analyzer import PerformanceAnalyzer
 from modules.ranking_analyzer import RankingAnalyzer
+from modules.blacklist_checker import BlacklistChecker
+from modules.email_diagnostics import EmailDiagnostics
+from modules.external_tools import ExternalTools
 
 import requests
 from bs4 import BeautifulSoup
@@ -22,6 +25,9 @@ class WebAuditor:
         self.seo_analyzer = SEOMarketingAnalyzer()
         self.performance_analyzer = PerformanceAnalyzer()
         self.ranking_analyzer = RankingAnalyzer()
+        self.blacklist_checker = BlacklistChecker()
+        self.email_diagnostics = EmailDiagnostics()
+        self.external_tools = ExternalTools()
         self.timeout = 10
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         
@@ -68,7 +74,8 @@ class WebAuditor:
         if selected_modules is None:
             selected_modules = {
                 'dns': True, 'ssl': True, 'seo_marketing': True, 
-                'performance': True, 'ranking': True
+                'performance': True, 'ranking': True,
+                'blacklist': True, 'email': True, 'tools': True
             }
         
         # Validate URL
@@ -115,6 +122,19 @@ class WebAuditor:
             # WHOIS Information (included with DNS)
             if selected_modules.get('dns', False):
                 audit_results['results']['whois'] = self.dns_analyzer.get_whois_info(domain)
+
+            # ── New modules ──────────────────────────────
+            # Blacklist Check
+            if selected_modules.get('blacklist', False):
+                audit_results['results']['blacklist'] = self.blacklist_checker.check_blacklists(domain)
+
+            # Email Diagnostics
+            if selected_modules.get('email', False):
+                audit_results['results']['email'] = self.email_diagnostics.analyze_email(domain)
+
+            # External Tools Links
+            if selected_modules.get('tools', False):
+                audit_results['results']['tools'] = self.external_tools.generate_links(domain)
                 
         except Exception as e:
             audit_results['error'] = f"Audit failed: {str(e)}"
@@ -183,5 +203,19 @@ class WebAuditor:
             summary.append(f"  - Domain Authority: {ranking.get('domain_authority', 'N/A')}")
             summary.append(f"  - Page Authority: {ranking.get('page_authority', 'N/A')}")
             summary.append(f"  - Organic Traffic Est.: {ranking.get('organic_traffic_estimate', 'N/A')}")
+
+        # Blacklist Summary
+        if 'blacklist' in results:
+            bl = results['blacklist']
+            summary.append(f"🛡️ Blacklist:")
+            summary.append(f"  - IP: {bl.get('ip', 'N/A')}")
+            summary.append(f"  - Status: {bl.get('status', 'N/A')}")
+            summary.append(f"  - Listed on: {bl.get('listed_count', 0)} list(s)")
+
+        # Email Summary
+        if 'email' in results:
+            email = results['email']
+            summary.append(f"📧 Email:")
+            summary.append(f"  - Overall: {email.get('overall_status', 'N/A')}")
             
         return "\n".join(summary)
